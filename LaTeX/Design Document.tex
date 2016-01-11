@@ -1,0 +1,61 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{array}
+\usepackage{multirow}
+
+\title{Shwap CPU Design Documentation}
+\author{fenogljc, hirschag, mckeeaj, and Wesley Van Pelt}
+\date{Winter 2015/2016}
+
+\begin{document}
+\maketitle
+\section{Registers}
+	There are a total of 76 16-bit registers; 12 are fixed and 64 (spilt into 16 groups of 4) "shwapable" registers.
+	
+	\subsection{Register Names and Discriptions}
+		\begin{center}
+			\begin{tabular}{| c | c | c | c |}
+				\hline
+				    Name        & Number  & Description     & Saved Across Call? \\ \hline
+				    \$0         & 0       & The Value 0     & -   \\ \hline
+				    \$pc        & 1       & Program Counter & Yes \\ \hline
+				    \$sp        & 2       & Stack Pointer   & Yes \\ \hline
+				    \$ra        & 3       & Return Address  & Yes \\ \hline
+				    \$s0 - \$s3 & 4 - 7   & Saved           & Yes \\ \hline
+				    \$t0 - \$t3 & 8 - 11  & Temporaries     & No  \\ \hline
+				    \$h0 - \$h3 & 12 - 15 & Shwap           & -   \\ 
+				\hline
+			\end{tabular}
+		\end{center}
+	\subsection{Shwap Registers}
+		The "shwap" registers are registers that appear to be swapped using a command.  There is no data movement when shwapping, it only changes which registers the \$h0 - \$h3 refer to.  There are 8 groups the user can switch between and 8 reserved groups.
+		\subsubsection{Shwap Group Numbers, Descriptions, and Uses}
+			\begin{center}
+				\begin{tabular}{| c | c | c | c |}
+					\hline
+				    	Group Number   & ID    & Uses                     & Saved Across Call? \\ \hline
+					    0 - 7          & 0 - 3 & User Temporaries         & No \\ \hline
+					    8              & 0 - 3 & I/O for devices 0 - 3    & -  \\ \hline
+					    9              & 0 - 3 & Arguments 0 - 3          & No \\ \hline
+					    10             & 0 - 3 & Return Values 0 - 3      & No \\ \hline
+					    11             & 0 - 3 & System Call Values 0 - 3 & No \\ \hline
+				    	12             & 0 - 3 & Kernel Reserved          & No \\ \hline
+					    13             & 0 - 3 & Temporary Restore        & No \\ \hline 
+					    \multirow{4}{*}{14} & 0 & Exception Cause         & No \\
+					    			   & 1     & Exception Status         & No \\
+								       & 2     & EPC                      & No \\
+								       & 3     & Exception Temporary      & No \\ \hline
+					    15             & 0 - 3 & Assembler Temporaries    & No \\
+					\hline
+				\end{tabular}
+			\end{center}
+\section{Instructions}
+	\subsection{Instruction Types and Bit Layouts}
+		[stuff]
+	\subsection{Core Instructions}
+		[stuff]
+	\subsection{Sudo Instructions}
+		[stuff]
+
+\end{document}
