@@ -1,0 +1,11 @@
+Journal
+=======
+
+Milestone One
+-------------
+
+In this milestone we accomplished the following:
+
+*	Decided on CPU Architecture
+*	Decided on CPU Instruction set basics
+*	Wrote Assembly instructions for RelPrime
