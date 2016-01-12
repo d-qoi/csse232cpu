@@ -10,6 +10,6 @@ In this milestone we accomplished the following:
 *	Decided on CPU Instruction set basics
 *	Wrote Assembly instructions for RelPrime
 
-Alex and Westely worked on the design of the CPU and Instruction set. Westely created 
+Alex and Wesley worked on the design of the CPU and Instruction set. Wesley created 
 the documentation and Charlie scribed and provided arguments and counter argumetns for 
 ideas.
