@@ -6,10 +6,10 @@ Milestone One
 
 In this milestone we accomplished the following:
 
-*	Decided on CPU Architecture
+*	Decided on CPU Architecture (hybrid of load-store and x86)
 *	Decided on CPU Instruction set basics
 *	Wrote Assembly instructions for RelPrime
 
 Alex and Wesley worked on the design of the CPU and Instruction set. Wesley created 
-the documentation and Charlie scribed and provided arguments and counter argumetns for 
-ideas.
+the documentation and Charlie scribed and provided arguments and counter arguments for 
+ideas.  Andrew didn't show up or reply to emails.
