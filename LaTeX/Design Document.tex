@@ -129,6 +129,7 @@
 					    & 0x9 & xor & A & \thead{xor [dest], [src] \\ xor [dest], [immediate]} & \thead{dest $\string^=$ src \\ dest $\string^=$ immediate} & \thead{Xors 2 Values}\\ \cline{2-7}
 					    & 0xA & not & A & \thead{not [dest], [src] \\ not [dest], [immediate]} & \thead{dest $=$ $\sim$src \\ dest $=$ $\sim$immediate} & \thead{Bitwise Nots 2 Values}\\ \cline{2-7}
 					    & 0xB & tsc & A & \thead{tsc [dest], [src] \\ tsc [dest], [immediate]} & \thead{dest $=$ $\sim$src + 1 \\ dest $=$ $\sim$immediate + 1} & \thead{Converts a number \\ to 2's compliment}\\ \cline{2-7}
+					    & 0xE & ldi & A & \thead{ldi [dest], [immediate]}                      & \thead{dest $=$ immediate} & \thead{Loads the immediate into \\ the dest register} \\ \cline{2-7}
 					    & 0xF & cpy & A & \thead{cpy [dest], [src] \\ cpy [dest], [immediate]} & \thead{dest $=$ src \\ dest $=$ immediate} & \thead{Copies a value} \\ \hline
 					0x2 & -   & jr  & J & \thead{jr [regNumber]}                               & \thead{PC $=$ regNumber} & \thead{Sets the PC to the value \\ in the register}\\ \hline
 					0x3 & -   & rsh & H & \thead{rsh [groupNumber]}                            & - & \thead{Sets the schwappable \\ registers to use}\\ \hline
@@ -146,29 +147,40 @@
 		\begin{center}
 			\begin{tabular}{| c | c | c | c |} \hline
 				Name & Syntax                 & Actual Code & Description \\ \hline
-				li   & li [dest], [immediate] & & \\ \hline
-				j    & j label                & & \\ \hline
-				jal  & jal label              & & \\ \hline
+				j    & j label                & \thead{jr [instructionNumber]}      & \thead{Jumps to the instruction at the label by using jr \\ and the instruction number} \\ \hline
+				jal  & jal label              & \thead{cpy \$ra, \$pc \\ j [label]} & \thead{Stores the return address and then jumps to the label} \\ \hline
 			\end{tabular}
 		\end{center}
 \section{Examples}
 	\lstset{language=sh}
 	\subsection{Basic Use Examples}
-		\subsubsection{Loading an address into a register}
+		\subsubsection{Loading an immediate into a register}
 			\begin{lstlisting}[frame=single]
-code
+ldi $t0, 32	#Loads 32 into t0
 			\end{lstlisting}
-		\subsubsection{Iteration}
+		\subsubsection{Iteration and Conditionals}
+			This is an example of which will iterate over 4 array elements in memory and add 32 to each of them.  It will stop repeating after the 4 elements using beq.
 			\begin{lstlisting}[frame=single]
-code
-			\end{lstlisting}
-		\subsubsection{Conditional Statements}
-			\begin{lstlisting}[frame=single]
-code
+	# There is a base memory address for an array in memory at s0
+	ldi $t0, 8
+	cpy $t1, $0
+loop:
+	r   $t2, 0($s0)
+	add $t2, 32
+	w   0($s0), $t2
+	add $t1, 2
+	beq $t0, $t1, loop
 			\end{lstlisting}
 		\subsubsection{I/O}
+			To get input:
 			\begin{lstlisting}[frame=single]
-code
+rsh 8          # Switch to the IO schwap
+cpy $t0, $h0   # Copy the input from device 0 into t0
+			\end{lstlisting}
+			To give output:
+			\begin{lstlisting}[frame=single]
+rsh 8          # Switch to the IO schwap
+cpy $h0, $t0   # Copy the output for device 0 from t0
 			\end{lstlisting}
 	\subsection{relPrime and gcd Implementation}
 		\subsubsection{relPrime}

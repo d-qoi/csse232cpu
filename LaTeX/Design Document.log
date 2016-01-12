@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015) (preloaded format=pdflatex 2015.5.24)  12 JAN 2016 03:10
+This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015) (preloaded format=pdflatex 2015.5.24)  12 JAN 2016 15:01
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -378,28 +378,28 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 [1
 
 {/usr/local/texlive/2015/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
-Overfull \hbox (9.8486pt too wide) in paragraph at lines 117--144
+Overfull \hbox (9.8486pt too wide) in paragraph at lines 117--145
  [] 
  []
 
-[2] (/usr/local/texlive/2015/texmf-dist/tex/latex/listings/lstlang1.sty
+[2] [3] (/usr/local/texlive/2015/texmf-dist/tex/latex/listings/lstlang1.sty
 File: lstlang1.sty 2014/09/06 1.5e listings language file
 )
-[3] [4]
-LaTeX Font Info:    Try loading font information for OML+cmr on input line 208.
+[4]
+LaTeX Font Info:    Try loading font information for OML+cmr on input line 220.
 
  (/usr/local/texlive/2015/texmf-dist/tex/latex/base/omlcmr.fd
 File: omlcmr.fd 2014/09/29 v2.5h Standard LaTeX font definitions
 )
 LaTeX Font Info:    Font shape `OML/cmr/m/it' in size <10> not available
-(Font)              Font shape `OML/cmm/m/it' tried instead on input line 208.
+(Font)              Font shape `OML/cmm/m/it' tried instead on input line 220.
  [5]
 (./Design Document.aux) ) 
 Here is how much of TeX's memory you used:
- 2915 strings out of 493089
- 37526 string characters out of 6134842
- 145404 words of memory out of 5000000
- 6408 multiletter control sequences out of 15000+600000
+ 2921 strings out of 493089
+ 37569 string characters out of 6134842
+ 144779 words of memory out of 5000000
+ 6414 multiletter control sequences out of 15000+600000
  8594 words of font info for 30 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  26i,17n,40p,511b,1569s stack positions out of 5000i,500n,10000p,200000b,80000s
@@ -418,7 +418,7 @@ y6.pfb></usr/local/texlive/2015/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7
 .pfb></usr/local/texlive/2015/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.p
 fb></usr/local/texlive/2015/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pf
 b>
-Output written on "Design Document.pdf" (5 pages, 176479 bytes).
+Output written on "Design Document.pdf" (5 pages, 178842 bytes).
 PDF statistics:
  76 PDF objects out of 1000 (max. 8388607)
  54 compressed objects within 1 object stream
