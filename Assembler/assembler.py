@@ -92,11 +92,28 @@ class assembler:
 	def AType(inst):
 		out = ['0x0','','','']
 		if '$' in inst[1] and '$' in inst[2]: # two registers
-			out[3] = binaryMapInst[inst[0]]
 			out[1] = binaryMapRegs[inst[1]]
 			out[2] = binaryMapRegs[inst[2]]
+			out[3] = binaryMapInst[inst[0]]
+			program.append(out)
+		else:
+			if '$' in inst[1]:
+				out[0] = '0x1'
+				out[1] = binaryMapRegs[inst[1]]
+				out[2] = binaryMapInst['$zz']
+				out[3] = binaryMapInst[inst[0]]
+			elif '$' in inst[2]
+				out[0] = '0x1'
+				out[1] = binaryMapRegs[inst[2]]
+				out[2] = binaryMapInst['$zz']
+				out[3] = binaryMapInst[inst[0]]
+			program.append(out)
+			program.append(inst[1])
+
+		# Ignoreing 0x1 $r $r 0ximm case for now
 
 	def BType(inst):
+		
 
 	def HType(inst):
 
