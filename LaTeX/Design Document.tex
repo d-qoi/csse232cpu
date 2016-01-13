@@ -1,0 +1,233 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{makecell}
+\usepackage{listings}
+
+\title{Schwap CPU Design Documentation}
+\author{Charlie Fenoglio, Alexander Hirschfeld, mckeeaj, and Wesley Van Pelt}
+\date{Winter 2015/2016}
+
+\begin{document}
+\maketitle
+\section{Registers}
+	There are a total of 76 16-bit registers; 12 are fixed and 64 (spilt into 16 groups of 4) "schwapable" registers.
+	
+	\subsection{Register Names and Descriptions}
+		\begin{center}
+			\begin{tabular}{| c | c | c | c |}
+				\hline
+				    Name        & Number  & Description      & Saved Across Call? \\ \hline
+				    \$0         & 0       & The Value 0      & -   \\ \hline
+				    \$pc        & 1       & Program Counter  & Yes \\ \hline
+				    \$sp        & 2       & Stack Pointer    & Yes \\ \hline
+				    \$ra        & 3       & Return Address   & Yes \\ \hline
+				    \$s0 - \$s3 & 4 - 7   & User Temporary Saved & Yes \\ \hline
+				    \$t0 - \$t3 & 8 - 11  & User Temporaries & No  \\ \hline
+				    \$h0 - \$h3 & 12 - 15 & Schwap           & -   \\ 
+				\hline
+			\end{tabular}
+		\end{center}
+	\subsection{Schwap Registers}
+		The "schwap" registers are registers that appear to be swapped using a command.  There is no data movement when schwapping, it only changes which registers the \$h0 - \$h3 refer to.  There are 8 groups the user can switch between and 8 reserved groups.
+		\subsubsection{Schwap Group Numbers, Descriptions, and Uses}
+			\begin{center}
+				\begin{tabular}{| c | c | c | c |}
+					\hline
+				    	Group Number   & ID    & Uses                     & Saved Across Call? \\ \hline
+					    0 - 7          & 0 - 3 & User Temporaries         & No \\ \hline
+					    8              & 0 - 3 & I/O for devices 0 - 3    & -  \\ \hline
+					    9              & 0 - 3 & Arguments 0 - 3          & No \\ \hline
+					    10             & 0 - 3 & Return Values 0 - 3      & No \\ \hline
+					    11             & 0 - 3 & System Call Values 0 - 3 & No \\ \hline
+				    	12             & 0 - 3 & Kernel Reserved          & No \\ \hline
+					    13             & 0 - 3 & Temporary Restore        & No \\ \hline 
+					    \multirow{4}{*}{14} & 0 & Exception Cause         & No \\
+					    			   & 1     & Exception Status         & No \\
+								       & 2     & EPC                      & No \\
+								       & 3     & Exception Temporary      & No \\ \hline
+					    15             & 0 - 3 & Assembler Temporaries    & No \\
+					\hline
+				\end{tabular}
+			\end{center}
+\newpage
+\section{Instructions}
+	All instructions are 16-bits.  The destination register is also used as a source unless otherwise noted.  All offsets are bit shifted left by 1 since all instructions are 2 bytes long. 
+	\subsection{Instruction Types and Bit Layouts}
+		Instructions can be manually translated by putting the bits for each of the components of the instructions in the places listed by the diagrams for each type.  The OP codes, function codes, and types can by found on the "Core Instructions" (2.2) table.  The destination and source are register numbers, which can be found under the "Register Names and Descriptions" (1.1) table.  Schwap group numbers can be found under the "Schwap Group Numbers, Descriptions, and Uses" (1.2.1) table.
+		\subsubsection{A-Type}
+			Used for all ALU operations.  It consists of a 4-bit OP code, 4-bit destination, 4-bit source, and a 4-bit function code.
+			\begin{center}
+				\begin{tabular}{l r l r l r l r}
+					\hline
+					\multicolumn{2}{| p{2cm} |}{OP Code} & \multicolumn{2}{p{2cm}}{Destination} & \multicolumn{2}{| p{2cm} |}{Source} & \multicolumn{2}{p{2cm} |}{Func. Code} \\ \hline
+					15 & 12 & 11 & 8 & 7 & 4 & 3 & 0
+				\end{tabular}
+			\end{center}
+		\subsubsection{B-Type}
+			Used for branching.  It consists of a 4-bit OP code, 4-bit 1st source, 4-bit 2nd source, and a 4-bit offset.
+			\begin{center}
+				\begin{tabular}{l r l r l r l r}
+					\hline
+					\multicolumn{2}{| p{2cm} |}{OP Code} & \multicolumn{2}{p{2cm}}{Source 0} & \multicolumn{2}{| p{2cm} |}{Source 1} & \multicolumn{2}{p{2cm} |}{Offset} \\ \hline
+					15 & 12 & 11 & 8 & 7 & 4 & 3 & 0
+				\end{tabular}
+			\end{center}
+		\subsubsection{H-Type}
+			Used for schwapping.  It consists of a 4-bit OP code, 8 unused bits, and a 4-bit schwap group number.
+			\begin{center}
+				\begin{tabular}{l r l r l r l r}
+					\hline
+					\multicolumn{2}{| p{2cm} |}{OP Code} & \multicolumn{2}{p{2cm}}{ } & \multicolumn{2}{p{2cm}}{ } & \multicolumn{2}{| p{2cm} |}{Group} \\ \hline
+					15 & 12 & & & & & 3 & 0
+				\end{tabular}
+			\end{center}
+		\subsubsection{J-Type}
+			Used for jumping.  It consists of a 4-bit OP code, 4-bit source, and an 8-bit offset.
+			\begin{center}
+				\begin{tabular}{l r l r l r l r}
+					\hline
+					\multicolumn{2}{| p{2cm} |}{OP Code} & \multicolumn{2}{p{2cm}}{Source} & \multicolumn{2}{| p{2cm} }{Offset} & \multicolumn{2}{p{2cm} |}{ } \\ \hline
+					15 & 12 & 11 & 8 & 7 & & & 0
+				\end{tabular}
+			\end{center}
+		\subsubsection{R-Type}
+			Used for reading and writing memory.  It consists of a 4-bit OP code, 4-bit destination (not used as a source), 4-bit source, and a 4-bit offset.
+			\begin{center}
+				\begin{tabular}{l r l r l r l r}
+					\hline
+					\multicolumn{2}{| p{2cm} |}{OP Code} & \multicolumn{2}{p{2cm}}{Destination} & \multicolumn{2}{| p{2cm} |}{Source} & \multicolumn{2}{p{2cm} |}{Offset} \\ \hline
+					15 & 12 & 11 & 8 & 7 & 4 & 3 & 0
+				\end{tabular}
+			\end{center}
+
+		\subsubsection{S-Type}
+			Used for sudo.  Only has a 4-bit OP code.
+			\begin{center}
+				\begin{tabular}{l r l r l r l r}
+					\hline
+					\multicolumn{2}{| p{2cm} |}{OP Code} & \multicolumn{2}{p{2cm}}{ } & \multicolumn{2}{ p{2cm} }{ } & \multicolumn{2}{p{2cm} |}{ } \\ \hline
+					15 & 12 & & & & & &
+				\end{tabular}
+			\end{center}
+	\subsection{Core Instructions}
+		\begin{center}
+			\begin{tabular}{| c | c | c | c | c | c | c | c |}
+				\hline
+					\thead{OP \\ Code} & \thead{Function \\ Code} & Name & Type & Syntax & Meaning & Description \\ \hline
+					\multirow{22}{*}{\thead{0x0 \\ and \\ 0x1$^\dagger$}} & 0x0 & add & A & \thead{add [dest], [src] \\ add [dest], [immediate]} & \thead{dest $+=$ src \\ dest $+=$ immediate} & \thead{Adds 2 Integers}\\ \cline{2-7}
+					    & 0x1 & adu & A & \thead{adu [dest], [src] \\ adu [dest], [immediate]} & \thead{dest $+=$ src \\ dest $+=$ immediate} & \thead{Adds 2 Unsigned Integers}\\ \cline{2-7}
+					    & 0x2 & sub & A & \thead{sub [dest], [src] \\ sub [dest], [immediate]} & \thead{dest $-=$ src \\ dest $-=$ immediate} & \thead{Subtracts 2 Integers}\\ \cline{2-7}
+					    & 0x3 & sbu & A & \thead{sbu [dest], [src] \\ sbu [dest], [immediate]} & \thead{dest $-=$ src \\ dest $-=$ immediate} & \thead{Subtracts 2 Unsigned Integers}\\ \cline{2-7}
+					    & 0x4 & sll & A & \thead{sll [dest], [immediate]}                      & \thead{dest $<<=$ immediate}                 & \thead{Left Logical Bit shift}\\ \cline{2-7}
+					    & 0x5 & srl & A & \thead{srl [dest], [immediate]}                      & \thead{dest $>>=$ immediate}                 & \thead{Right Logical Bit shift}\\ \cline{2-7}
+					    & 0x6 & sra & A & \thead{sra [dest], [immediate]}                      & \thead{dest $>>>=$ immediate}                & \thead{Right Arithmetic Bit shift}\\ \cline{2-7}
+					    & 0x7 & and & A & \thead{and [dest], [src] \\ and [dest], [immediate]} & \thead{dest $\&=$ src \\ dest $\&=$ immediate} & \thead{Ands 2 Values}\\ \cline{2-7}
+					    & 0x8 & orr & A & \thead{orr [dest], [src] \\ orr [dest], [immediate]} & \thead{dest $\|=$ src \\ dest $\|=$ immediate} & \thead{Ors 2 Values}\\ \cline{2-7}
+					    & 0x9 & xor & A & \thead{xor [dest], [src] \\ xor [dest], [immediate]} & \thead{dest $\string^=$ src \\ dest $\string^=$ immediate} & \thead{Xors 2 Values}\\ \cline{2-7}
+					    & 0xA & not & A & \thead{not [dest], [src] \\ not [dest], [immediate]} & \thead{dest $=$ $\sim$src \\ dest $=$ $\sim$immediate} & \thead{Bitwise Nots 2 Values}\\ \cline{2-7}
+					    & 0xB & tsc & A & \thead{tsc [dest], [src] \\ tsc [dest], [immediate]} & \thead{dest $=$ $\sim$src + 1 \\ dest $=$ $\sim$immediate + 1} & \thead{Converts a number \\ to 2's compliment}\\ \cline{2-7}
+					    & 0xE & ldi & A & \thead{ldi [dest], [immediate]}                      & \thead{dest $=$ immediate} & \thead{Loads the immediate into \\ the dest register} \\ \cline{2-7}
+					    & 0xF & cpy & A & \thead{cpy [dest], [src] \\ cpy [dest], [immediate]} & \thead{dest $=$ src \\ dest $=$ immediate} & \thead{Copies a value} \\ \hline
+					0x2 & -   & jr  & J & \thead{jr [regNumber]}                               & \thead{PC $=$ regNumber} & \thead{Sets the PC to the value \\ in the register}\\ \hline
+					0x3 & -   & rsh & H & \thead{rsh [groupNumber]}                            & - & \thead{Sets the schwappable \\ registers to use}\\ \hline
+					0x4 & -   & beq & B & \thead{beq [src0], [src1], label}                    & - & \thead{Branches to the label \\ if src0 == src1}\\ \hline
+					0x5 & -   & bnq & B & \thead{bnq [src0], [src1], label}                    & - & \thead{Branches to the label \\ if src0 != src1}\\ \hline
+					0x6 & -   & bgt & B & \thead{bgt [src0], [src1], label}                    & - & \thead{Branches to the label \\ if src0 $>$ src1}\\ \hline
+					0x7 & -   & r   & R & \thead{r [dest], [src]}                              & - & \thead{Moves the value in memory \\ at the address in src into dest}\\ \hline
+					0x8 & -   & w   & R & \thead{w [dest], [src]}                              & - & \thead{Moves the value in dest \\ to the address in src in memory}\\ \hline
+					0xF & -   & sudo & S & \thead{sudo}                                        & - & \thead{Same as "syscall" in MIPS}\\
+				\hline
+			\end{tabular}
+			$^\dagger$0x0 is used for instructions which do not use an immediate, 0x1 is used if the instruction does use an immediate
+		\end{center}
+	\subsection{Psuedo Instructions}
+		\begin{center}
+			\begin{tabular}{| c | c | c | c |} \hline
+				Name & Syntax                 & Actual Code & Description \\ \hline
+				j    & j label                & \thead{jr [instructionNumber]}      & \thead{Jumps to the instruction at the label by using jr \\ and the instruction number} \\ \hline
+				jal  & jal label              & \thead{cpy \$ra, \$pc \\ j [label]} & \thead{Stores the return address and then jumps to the label} \\ \hline
+			\end{tabular}
+		\end{center}
+\section{Examples}
+	\lstset{language=sh}
+	\subsection{Basic Use Examples}
+		\subsubsection{Loading an immediate into a register}
+			\begin{lstlisting}[frame=single]
+ldi $t0, 32	#Loads 32 into t0
+			\end{lstlisting}
+		\subsubsection{Iteration and Conditionals}
+			This is an example of which will iterate over 4 array elements in memory and add 32 to each of them.  It will stop repeating after the 4 elements using beq.
+			\begin{lstlisting}[frame=single]
+	# There is a base memory address for an array in memory at s0
+	ldi $t0, 8
+	cpy $t1, $0
+loop:
+	r   $t2, 0($s0)
+	add $t2, 32
+	w   0($s0), $t2
+	add $t1, 2
+	beq $t0, $t1, loop
+			\end{lstlisting}
+		\subsubsection{I/O}
+			To get input:
+			\begin{lstlisting}[frame=single]
+rsh 8          # Switch to the IO schwap
+cpy $t0, $h0   # Copy the input from device 0 into t0
+			\end{lstlisting}
+			To give output:
+			\begin{lstlisting}[frame=single]
+rsh 8          # Switch to the IO schwap
+cpy $h0, $t0   # Copy the output for device 0 from t0
+			\end{lstlisting}
+	\subsection{relPrime and gcd Implementation}
+		\subsubsection{relPrime}
+			\begin{lstlisting}[frame=single]
+RelPrime:	
+	rsh	9		#set schwap
+	cpy	$s2, $ra	#save $ra
+	cpy	$s0, $h0	#copy n out of schwap
+	li	$s1, 0x2	#load 2 to m
+	rsh	9		#set schwap to args
+While:
+	cpy	$h0, $s0	#set a0 to n
+	cpy	$h1, $s1	#set a1 to m
+	jl	GCD		#call GCD
+	rsh	10		#set schwap
+	li	$t0, 0x1	#load immediate 0x1 to t0
+	bne	$h0, $t0, Done	#branch to done if r0 != 1
+	add	$s1, 0x1	#add 1 to m
+	j	While		#jump to the start of the loop
+Done:
+	rsh	10		#load return registers
+	cpy	$h0, $s1	#set r0 to m
+	jr	$s2, 0		#return to the previous function
+			\end{lstlisting}
+		\subsubsection{gcd}
+			\begin{lstlisting}[frame=single]
+GCD:
+	rsh	9		#schwap to argument register
+Base:
+	bne	$h0, $z0, GMain	#a!=0 go to GMain
+	cpy	$t0, $h1	#copy h1 to t0 for RSH
+	rsh	10		#schwap to return registers
+	cpy	$h0, $t0	#load t0 to r1
+	jr	$ra, 0		#return
+GMain:	
+	beq	$h1, $z0, Exit	#jump to exit if b is zero
+	bgt	$h0, $h1, If	#jump to If if a>b
+Else:	
+	sub	$h1, $h0	#else: b=b-a
+	j	GMain		#loop
+If:	
+	sub	$h0, $h1	#if: a=a-b
+	j	GMain		#loop
+Exit:
+	cpy	$t0, $h0	#copy h0 to t0 for rsh schwap
+	rsh	10		#make sure we're in the right spot
+	cpy	$h0, $t0	#copy t0 to h0
+	jr	$ra		#return
+			\end{lstlisting}
+\end{document}
