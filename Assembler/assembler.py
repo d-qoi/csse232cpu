@@ -18,7 +18,7 @@ class assembler:
 				'xor':'0x9',
 				'not':'0xA',
 				'tsc':'0xB',
-				'ldi':'0xE',
+				'ldi':'0xE', 'li':'0xE',
 				'cpy':'0xF',
 				'jr':'0x2',
 				'rsh':'0x3',
@@ -58,15 +58,43 @@ class assembler:
 
 
 	def assemble(inPath, outPath):
-		with open(inPath, r) as in instruction:
-			inst = instruction.split(' ')
+		with open(inPath, r) as in prog:
+			while True:
+				instruction = prog.readline().strip()
+				if instruction is '': #eof
+					break
 
 
-	def getBinaryFor(code):
-		if(code)
+				if instruction.contains('#'): #cutting out comments
+					instruction = instruction[0:instruction.index('#').strip()] 
+
+				inst = [item.strip().strip(',') for item in instruction.split()]
+				# I don't like this line, but it is shorter than alternatives
+				# This line trims the list into specific values
+
+				if inst[0].contains(':'):
+					symbolDef[inst[0].strip()[0:-1]] = len(program) + 1 #add to the symbol
+					inst = inst[1:] #remove the symbol
+
+				if inst[0] in ATypeList:
+					AType(inst)
+				elif inst[0] in BTypeList:
+					BType(inst)
+				elif inst[0] in HTypeList:
+					HType(inst)
+				elif inst[0] in JTypeList:
+					JType(inst)
+				elif inst[0] in RTypeList:
+					RType(inst)
+				elif inst[0] in STypeList:
+					SType(inst)
 
 	def AType(inst):
-
+		out = ['0x0','','','']
+		if '$' in inst[1] and '$' in inst[2]: # two registers
+			out[3] = binaryMapInst[inst[0]]
+			out[1] = binaryMapRegs[inst[1]]
+			out[2] = binaryMapRegs[inst[2]]
 
 	def BType(inst):
 
@@ -80,4 +108,3 @@ class assembler:
 
 
 	def __init__(self, progStart, memStart):
-
