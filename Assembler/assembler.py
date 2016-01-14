@@ -117,12 +117,12 @@ class Assembler:
                 
     def printAsm(self, outFile):
         with open(outFile, 'w') as dest:
-            dest.write("THIS IS NOT DONE YET")
+            dest.write("THIS IS NOT DONE YET\n")
             for i in range(0,len(self.program)):
-                dest.write(i,': ')
+                dest.write(str(i)+': 0x')
                 for out in self.program[i]:
                     if isinstance(out, str):
-                        dest.write(str(self.symbolDef[out] - i),':sym') #This may need to be reversed
+                        dest.write(out) #This may need to be reversed
                     elif out > 0:
                         dest.write(hex(out)[2:])
                     elif out <= 0:
@@ -178,7 +178,7 @@ class Assembler:
         out = ['','','']
         out[0] = self.binaryMapInst[inst[0]]
         out[1] = self.binaryMapRegs[inst[1]]
-        out[2] = (int(inst[3]) & 0xFF)
+        out[2] = (int(inst[2]) & 0xFF)
         self.program[self.programCounter] = out
 
     def RType(self, inst):
