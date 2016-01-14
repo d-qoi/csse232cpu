@@ -50,7 +50,7 @@ class Assembler:
     ATypeList = {'add','adu','sub','sbu','sll','srl','sra','and','orr','or',
                 'xor','not','tsc','ldi','li','cpy'}
 
-    PseudoList = {'jl',}
+    PseudoList = {'jl'} # Please update and see the method
 
     BTypeList = {'beq','bnq','bne','bgt'}
     HTypeList = {'rsh'}
@@ -85,9 +85,10 @@ class Assembler:
                         continue
 
                 self.program.append(inst) # append program to inst
-                
-                #sudo instruction expansion
-                
+                #Appending the new line of asm to the end of the program, and reading from the program counter to update the program to contain the converted line
+                # I am doing this to account for the fact that all pseudo instructions are going to make this code bigger
+                # If I were to continue reading from the file, then things would go badly,
+                # in this case, we can just append to the Program and let the following code take care of converting the extended program into binary/hex
 
                 while self.programCounter < len(self.program):
                     if self.program[self.programCounter][0] in self.ATypeList:
@@ -102,6 +103,10 @@ class Assembler:
                         self.RType(self.program[self.programCounter])
                     elif self.program[self.programCounter][0] in self.STypeList:
                         self.SType(self.program[self.programCounter])
+                    elif self.program[self.programCounter][0] in self.PseudoList: #sudo instruction expansion
+                        self.pseudoExpand(self.program[self.programCountero])
+                    else:
+                        raise NameError("Unknown Instruction: " + self.program[self.programCounter][0])
 
                     self.programCounter += 1
                     #debugging
@@ -129,16 +134,16 @@ class Assembler:
                 out[2] = self.binaryMapInst['$zz']
                 out[3] = self.binaryMapInst[inst[0]]
             self.program[self.programCounter] = out
-            self.program.append(self.programCounter + 1, inst[1])
-            self.programCounter += 1
-        else:
-            out[1] = 0x1
+            self.program.insert(self.programCounter + 1, inst[1])
+            self.programCounter += 1 #because I am inserting the immediate, the PC needs to be increased
+        else: # case for which we are loading an immediate into the second source on the same line
+            out[1] = 0x1 
             out[1] = self.binaryMapRegs[inst[1]]
             out[2] = self.binaryMapRegs[inst[2]]
             out[3] = self.binaryMapInst[inst[0]]
             self.program[self.programCounter] = out
-            self.program.append(self.programCounter + 1, inst[3])
-            self.programCounter += 1
+            self.program.insert(self.programCounter + 1, inst[3])
+            self.programCounter += 1 # because I am inserting the PC, the immeadiate needs to be increased
 
     def BType(self, inst):
         out = ['','','','']
@@ -146,20 +151,20 @@ class Assembler:
         out[1] = self.binaryMapRegs[inst[1]]
         out[2] = self.binaryMapRegs[inst[2]]
         out[3] = inst[3]
-         self.program[self.programCounter] = out
+        self.program[self.programCounter] = out
 
     def HType(self, inst):
         out = ['',0x0,0x0,'']
         out[0] = self.binaryMapInst[inst[0]]
         out[3] = (int(inst[1]) & 0xF)
-         self.program[self.programCounter] = out
+        self.program[self.programCounter] = out
 
     def JType(self, inst):
         out = ['','','']
         out[0] = self.binaryMapInst[inst[0]]
         out[1] = self.binaryMapRegs[inst[1]]
         out[3] = (int(inst[3]) & 0xFF)
-         self.program[self.programCounter] = out
+        self.program[self.programCounter] = out
 
     def RType(self, inst):
         out = ['','','','']
@@ -167,15 +172,15 @@ class Assembler:
         out[1] = self.binaryMapRegs[inst[1]]
         out[2] = self.binaryMapRegs[inst[2]]
         out[3] = (int(inst[3]))
-         self.program[self.programCounter] = out
+        self.program[self.programCounter] = out
 
     def SType(self, inst):
         out = ['',0,0,0]
         out[0] = self.binaryMapInst[inst[0]]
-         self.program[self.programCounter] = out
+        self.program[self.programCounter] = out
 
     def pseudoExpand(self, inst):
-        pass
+        pass #implement please.
 
     def __init__(self, progStart):
         progStart = 0
