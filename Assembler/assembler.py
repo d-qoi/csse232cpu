@@ -50,7 +50,7 @@ class Assembler:
     ATypeList = {'add','adu','sub','sbu','sll','srl','sra','and','orr','or',
                 'xor','not','tsc','ldi','li','cpy'}
 
-    PseudoList = {'jl'} # Please update and see the method
+    PseudoList = {'jl','j','li','ldi'} # Please update and see the method
 
     BTypeList = {'beq','bnq','bne','bgt'}
     HTypeList = {'rsh'}
@@ -104,15 +104,30 @@ class Assembler:
                     elif self.program[self.programCounter][0] in self.STypeList:
                         self.SType(self.program[self.programCounter])
                     elif self.program[self.programCounter][0] in self.PseudoList: #sudo instruction expansion
-                        self.pseudoExpand(self.program[self.programCountero])
+                        self.pseudoExpand(self.program[self.programCounter])
+                        print(self.program[-3:],self.program[self.programCounter-1])
+                        continue
                     else:
-                        raise NameError("Unknown Instruction: " + self.program[self.programCounter][0])
+                        raise NameError("Unknown Instruction:", self.program[self.programCounter][0])
 
                     self.programCounter += 1
                     #debugging
                     print(self.program)
-                    print(self.programCounter + ' ' len(self.program))
+                    print(self.programCounter, str(len(self.program)))
                 
+    def printAsm(self, outFile):
+        with open(outFile, 'w') as dest:
+            dest.write("THIS IS NOT DONE YET")
+            for i in range(0,len(self.program)):
+                dest.write(i,': ')
+                for out in self.program[i]:
+                    if isinstance(out, str):
+                        dest.write(str(self.symbolDef[out] - i),':sym') #This may need to be reversed
+                    elif out > 0:
+                        dest.write(hex(out)[2:])
+                    elif out <= 0:
+                        dest.write(hex(out & 0xF)[2:]) # idk what I am doing, it is very late4
+                dest.write('\n')
 
 
     def AType(self, inst):
@@ -126,12 +141,12 @@ class Assembler:
             if '$' in inst[1]:
                 out[0] = 0x1
                 out[1] = self.binaryMapRegs[inst[1]]
-                out[2] = self.binaryMapInst['$zz']
+                out[2] = self.binaryMapRegs['$zz']
                 out[3] = self.binaryMapInst[inst[0]]
             elif '$' in inst[2]:
                 out[0] = 0x1
                 out[1] = self.binaryMapRegs[inst[2]]
-                out[2] = self.binaryMapInst['$zz']
+                out[2] = self.binaryMapRegs['$zz']
                 out[3] = self.binaryMapInst[inst[0]]
             self.program[self.programCounter] = out
             self.program.insert(self.programCounter + 1, inst[1])
@@ -163,7 +178,7 @@ class Assembler:
         out = ['','','']
         out[0] = self.binaryMapInst[inst[0]]
         out[1] = self.binaryMapRegs[inst[1]]
-        out[3] = (int(inst[3]) & 0xFF)
+        out[2] = (int(inst[3]) & 0xFF)
         self.program[self.programCounter] = out
 
     def RType(self, inst):
@@ -180,7 +195,14 @@ class Assembler:
         self.program[self.programCounter] = out
 
     def pseudoExpand(self, inst):
-        pass #implement please.
+        if 'jl' in inst or 'j' in inst:
+            print(inst)
+            out = ['','','']
+            out[0] = self.binaryMapInst['jr']
+            out[1] = self.binaryMapRegs['$pc']
+            out[2] = inst[1]
+            self.program[self.programCounter] = out #Hacky bullshit to make surethat I change this later
+            self.programCounter += 1
 
     def __init__(self, progStart):
         progStart = 0
@@ -188,5 +210,9 @@ class Assembler:
 
 if __name__ == '__main__':
     tempPath = 'RelPrime.asm'
-    Assembler(0).assemble(tempPath)
+    tempOut = 'RelPrime.out'
+    asm = Assembler(0)
+    asm.assemble(tempPath)
+    asm.printAsm(tempOut)
+
     
