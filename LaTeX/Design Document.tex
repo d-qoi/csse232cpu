@@ -7,7 +7,7 @@
 \usepackage{listings}
 
 \title{Schwap CPU Design Documentation}
-\author{Charlie Fenoglio, Alexander Hirschfeld, mckeeaj, and Wesley Van Pelt}
+\author{Charlie Fenoglio, Alexander Hirschfeld, Andrew McKee, and Wesley Van Pelt}
 \date{Winter 2015/2016}
 
 \begin{document}
@@ -31,7 +31,7 @@
 			\end{tabular}
 		\end{center}
 	\subsection{Schwap Registers}
-		The "schwap" registers are registers that appear to be swapped using a command.  There is no data movement when schwapping, it only changes which registers the \$h0 - \$h3 refer to.  There are 8 groups the user can switch between and 8 reserved groups.  Using "rsh 16" will return to the previous used group. 
+		The "schwap" registers are registers that appear to be swapped using a command.  There is no data movement when schwapping, it only changes which registers the \$h0 - \$h3 refer to.  There are 8 groups the user can switch between and 8 reserved groups.  Using "rsh 16" will return to the previous used group.
 		\subsubsection{Schwap Group Numbers, Descriptions, and Uses}
 			\begin{center}
 				\begin{tabular}{| c | c | c | c |}
@@ -68,7 +68,7 @@
 				\end{tabular}
 			\end{center}
 		\subsubsection{B-Type}
-			Used for branching.  It consists of a 4-bit OP code, 4-bit 1st source, 4-bit 2nd source, and a (signed) 4-bit offset.
+			Used for branching.  It consists of a 4-bit OP code, 4-bit 1st source, 4-bit 2nd source, and a 4-bit (unsigned) offset.
 			\begin{center}
 				\begin{tabular}{l r l r l r l r}
 					\hline
@@ -241,29 +241,29 @@ PC & Hex  & PC & Hex \\ \hline
 00 & 3009 & 42 & 3009 \\ \hline
 02 & 063F & 44 & 5C05 \\ \hline
 04 & 04CF & 46 & 085F \\ \hline
-06 & 050E & 48 & 300A \\ \hline
+06 & 150F & 48 & 300A \\ \hline
 08 & 0002 & 4A & 0A8F \\ \hline
 0A & 3009 & 4C & 2300 \\ \hline
 0C & 0C4F & 4E & 4B05 \\ \hline
-0E & 0D5F & 50 & 0C0F \\ \hline
+0E & 0D5F & 50 & 1C0F \\ \hline
 10 & 031F & 52 & 0072 \\ \hline
 12 & 300F & 54 & 2C00 \\ \hline
-14 & 0C0F & 56 & 301F \\ \hline
+14 & 1C0F & 56 & 301F \\ \hline
 16 & 0042 & 58 & 6CD7 \\ \hline
 18 & 2C00 & 5A & 0DC2 \\ \hline
 1A & 301F & 5C & 300F \\ \hline
-1C & 300A & 5E & 0C0F \\ \hline
-1E & 080E & 60 & 004E \\ \hline
+1C & 300A & 5E & 1C0F \\ \hline
+1E & 180F & 60 & 004E \\ \hline
 20 & 0001 & 62 & 2C00 \\ \hline
 22 & 4C85 & 64 & 301F \\ \hline
-24 & 0C0F & 66 & 0CD2 \\ \hline
+24 & 1C0F & 66 & 0CD2 \\ \hline
 26 & 000A & 68 & 300F \\ \hline
-28 & 2C00 & 6A & 0C0F \\ \hline
+28 & 2C00 & 6A & 1C0F \\ \hline
 2A & 301F & 6C & 004E \\ \hline
-2C & 0500 & 6E & 2C00 \\ \hline
+2C & 1500 & 6E & 2C00 \\ \hline
 2E & 0001 & 70 & 301F \\ \hline
 30 & 300F & 72 & 08CF \\ \hline
-34 & 0C0F & 74 & 300A \\ \hline
+34 & 1C0F & 74 & 300A \\ \hline
 36 & 000C & 76 & 0C8F \\ \hline
 38 & 2C00 & 78 & 2300 \\ \hline
 3A & 301F & & \\ \hline
