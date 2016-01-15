@@ -1,5 +1,6 @@
 class Assembler:
 
+    debug = False
     progStart = 0
     programCounter = 0
     program = []
@@ -80,6 +81,8 @@ class Assembler:
 
                 if ':' in inst[0]:
                     self.symbolDef[inst[0].strip()[0:-1]] = len(self.program) #add to the symbol
+                    if self.debug:
+                        print(self.symbolDef)
                     inst = inst[1:] #remove the symbol
                     if len(inst) is 0:
                         continue
@@ -105,15 +108,27 @@ class Assembler:
                         self.SType(self.program[self.programCounter])
                     elif self.program[self.programCounter][0] in self.PseudoList: #sudo instruction expansion
                         self.pseudoExpand(self.program[self.programCounter])
-                        print(self.program[-3:],self.program[self.programCounter-1])
+                        if self.debug:
+                            print(self.program[-3:],self.program[self.programCounter-1])
                         continue
                     else:
                         raise NameError("Unknown Instruction:", self.program[self.programCounter][0])
 
                     self.programCounter += 1
                     #debugging
-                    print(self.program)
-                    print(self.programCounter, str(len(self.program)))
+                    if self.debug:
+                        print(self.program)
+                        print(self.programCounter, str(len(self.program)))
+
+    def expandSymbols(self):
+        for i in range(0,len(self.program)):
+            if len(self.program[i]) is 4: # to make sure that constants don't crash this
+                if self.program[i][3] in self.symbolDef: # to make sure that it is a correct symbol
+                    if self.program[i][0] in {0x4,0x5,0x6}: # This is all of the branching instructions
+                        if self.symbolDef[self.program[i][3]]:
+                            pass
+
+
                 
     def printAsm(self, outFile):
         with open(outFile, 'w') as dest:
@@ -122,7 +137,12 @@ class Assembler:
                 dest.write(str(i)+': 0x')
                 for out in self.program[i]:
                     if isinstance(out, str):
-                        dest.write(out) #This may need to be reversed
+                        if out in self.symbolDef:
+                            dest.write(str(hex((self.symbolDef[out] - i) & 0xFF)[2:] +':sym')) #This may need to be reversed
+                        else:
+                            if self.debug:
+                                print(int(out))
+                            dest.write(out[2:]) # cutting off 0x
                     elif out > 0:
                         dest.write(hex(out)[2:])
                     elif out <= 0:
@@ -138,18 +158,12 @@ class Assembler:
             out[3] = self.binaryMapInst[inst[0]]
             self.program[self.programCounter] = out
         elif len(inst) is 3:
-            if '$' in inst[1]:
-                out[0] = 0x1
-                out[1] = self.binaryMapRegs[inst[1]]
-                out[2] = self.binaryMapRegs['$zz']
-                out[3] = self.binaryMapInst[inst[0]]
-            elif '$' in inst[2]:
-                out[0] = 0x1
-                out[1] = self.binaryMapRegs[inst[2]]
-                out[2] = self.binaryMapRegs['$zz']
-                out[3] = self.binaryMapInst[inst[0]]
+            out[0] = 0x1
+            out[1] = self.binaryMapRegs[inst[1]]
+            out[2] = self.binaryMapRegs['$zz']
+            out[3] = self.binaryMapInst[inst[0]]
             self.program[self.programCounter] = out
-            self.program.insert(self.programCounter + 1, inst[1])
+            self.program.insert(self.programCounter + 1, inst[2])
             self.programCounter += 1 #because I am inserting the immediate, the PC needs to be increased
         else: # case for which we are loading an immediate into the second source on the same line
             out[1] = 0x1 
@@ -171,14 +185,17 @@ class Assembler:
     def HType(self, inst):
         out = ['',0x0,0x0,'']
         out[0] = self.binaryMapInst[inst[0]]
-        out[3] = (int(inst[1]) & 0xF)
+        out[3] = (int(inst[1]))
         self.program[self.programCounter] = out
 
     def JType(self, inst):
         out = ['','','']
         out[0] = self.binaryMapInst[inst[0]]
         out[1] = self.binaryMapRegs[inst[1]]
-        out[2] = (int(inst[2]) & 0xFF)
+        if len(out) is 3:
+            out[2] = (int(inst[2]) & 0xFF)
+        else:
+            out[2] = 0x0
         self.program[self.programCounter] = out
 
     def RType(self, inst):
@@ -196,7 +213,8 @@ class Assembler:
 
     def pseudoExpand(self, inst):
         if 'jl' in inst or 'j' in inst:
-            print(inst)
+            if self.debug:
+                print(inst)
             out = ['','','']
             out[0] = self.binaryMapInst['jr']
             out[1] = self.binaryMapRegs['$pc']
@@ -212,6 +230,7 @@ if __name__ == '__main__':
     tempPath = 'RelPrime.asm'
     tempOut = 'RelPrime.out'
     asm = Assembler(0)
+    asm.debug = True
     asm.assemble(tempPath)
     asm.printAsm(tempOut)
 
