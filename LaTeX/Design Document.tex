@@ -22,7 +22,7 @@
 				    \$z0        & 0       & The Value 0$^\dagger$  & -   \\ \hline
 				    \$a0        & 1       & Assembler Temporary 0  & No  \\ \hline
 				    \$a1        & 2       & Assembler Temporary 1  & No  \\ \hline
-				    \$pc        & 3       & Program Counter        & Yes \\ \hline
+				    \$pc        & 3       & Program Counter$^\ddagger$& Yes \\ \hline
 				    \$sp        & 4       & Stack Pointer          & Yes \\ \hline
 				    \$ra        & 5       & Return Address         & Yes \\ \hline
 				    \$s0 - \$s1 & 6 - 7   & User Saved Temporaries & Yes \\ \hline
@@ -30,7 +30,8 @@
 				    \$h0 - \$h3 & 12 - 15 & Schwap                 & -   \\
 				\hline
 			\end{tabular} \\
-			$^\dagger$See Section 4.1.1-1 for details
+			$^\dagger$See Section 4.1.1-1 for details\\
+			$^\ddagger$See Section 4.1.1-2 for details
 		\end{center}
 	\subsection{Schwap Registers}
 		The "schwap" registers are registers that appear to be swapped using a command.  There is no data movement when schwapping, it only changes which registers the \$h0 - \$h3 refer to.  There are 8 groups the user can use for general purpose and 8 reserved groups.
@@ -400,7 +401,8 @@ Exit:
 	\subsection{Registers}
 		\subsubsection{Non-Schwappable}
 			\begin{enumerate}
-				\item \$z0 is reset on the rising edge of each CPU cycle, so it can be used for cycle-temporary storage. 
+				\item \$z0 is reset on the rising edge of each CPU cycle, so it can be used for cycle-temporary storage.
+				\item The value in \$pc should always be what the current instruction address is +2.
 			\end{enumerate}
 		\subsubsection{Schwappable}
 			\begin{enumerate}
