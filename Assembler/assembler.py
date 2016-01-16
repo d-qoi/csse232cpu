@@ -59,7 +59,6 @@ class Assembler:
     RTypeList = {'r','w'}
     STypeList = {'sudo'}
 
-
     def assemble(self, inPath):
         # This cannot be a file read in, it must be a list to pass
         with open(inPath, 'r') as prog:
@@ -120,36 +119,67 @@ class Assembler:
                         print(self.program)
                         print(self.programCounter, str(len(self.program)))
 
+
+    def branchToJumpDown(self, i):
+        self.program[i][3] = hex((self.symbolDef[self.program[i][3]] - i + 2) & 0xF)[2:] + " Needs to be changed, BTJD"
+
+    def branchToJumpUp(self, i):
+        self.program[i][3] = hex((self.symbolDef[self.program[i][3]] - i + 2) & 0xF)[2:] + " Needs to be changed, BTJU"
+
     def expandSymbols(self):
+        if self.debug:
+            print(self.symbolDef)
         for i in range(0,len(self.program)):
+            if self.debug:
+                temp = self.program[i]
             if len(self.program[i]) is 4: # to make sure that constants don't crash this
                 if self.program[i][3] in self.symbolDef: # to make sure that it is a correct symbol
-                    if self.program[i][0] in {0x4,0x5,0x6}: # This is all of the branching instructions
-                        if self.symbolDef[self.program[i][3]]:
-                            pass
-
-
-                
-    def printAsm(self, outFile):
-        with open(outFile, 'w') as dest:
-            dest.write("THIS IS NOT DONE YET\n")
-            for i in range(0,len(self.program)):
-                dest.write(str(i)+': 0x')
-                for out in self.program[i]:
-                    if isinstance(out, str):
-                        if out in self.symbolDef:
-                            dest.write(str(hex((self.symbolDef[out] - i) & 0xFF)[2:] +':sym')) #This may need to be reversed
+                    if self.program[i][0] in [0x4,0x5,0x6]: # This is all of the branching instructions
+                        if (self.symbolDef[self.program[i][3]] - i + 2) > 15:
+                            branchToJumpDown(i)
+                        elif (self.symbolDef[self.program[i][3]] - i + 2) < 0:
+                            branchToJumpUp(i)
                         else:
                             if self.debug:
-                                print(int(out))
-                            dest.write(out[2:]) # cutting off 0x
-                    elif out > 0:
-                        dest.write(hex(out)[2:])
-                    elif out <= 0:
-                        dest.write(hex(out & 0xF)[2:]) # idk what I am doing, it is very late4
+                                print(self.program[i], hex((self.symbolDef[self.program[i][3]] - i + 2) & 0xF))
+                            self.program[i][3] = hex((self.symbolDef[self.program[i][3]] - i + 2) & 0xF)[2:]
+                            if self.debug:
+                                print(self.program[i])
+                    else:
+                        raise NameError("Unknown use of Synmbols: " + str(self.program[i]))
+            elif len(self.program[i]) is 3: #to make sure that it can handel jumps
+                if self.program[i][0] in [0x2]:
+                    if self.program[i][2] in self.symbolDef:
+                        if self.debug:
+                            print(self.program[i], hex((self.symbolDef[self.program[i][2]] - i + 2) & 0xFF))
+                        self.program[i][2] = hex((self.symbolDef[self.program[i][2]] - i + 2) & 0xFF)[2:]
+                        if len(self.program[i][2]) < 2:
+                            self.program[i][2] = '0'+self.program[i][2]
+                        if self.debug:
+                            print(self.program[i])
+
+
+    def printAsm(self, outFile):
+        with open(outFile, 'w') as dest:
+            dest.write("""THIS IS NOT DONE YET
+The pseudo instructions are not yet finished, they still need to be implemented.
+Please be careful with this.
+
+
+""")
+            for line in self.program:
+                if not isinstance(line, str):
+                    dest.write('0x')
+                for inst in line:
+                    if isinstance(inst, str):
+                        dest.write(inst)
+                    else:
+                        dest.write(hex(inst)[2:])
                 dest.write('\n')
 
 
+# Different types of instructions, may need to change later.
+# If this is changed remember to change the list of instructions at the top
     def AType(self, inst):
         out = [0x0,'','','']
         if '$' in inst[1] and '$' in inst[2]: # two registers
@@ -193,9 +223,11 @@ class Assembler:
         out[0] = self.binaryMapInst[inst[0]]
         out[1] = self.binaryMapRegs[inst[1]]
         if len(out) is 3:
-            out[2] = (int(inst[2]) & 0xFF)
+            out[2] = hex(int(inst[2]) & 0xFF)[2:]
+            if len(out[2]) is 1:
+                out[2] = '0' + out[2]
         else:
-            out[2] = 0x0
+            out[2] = '00'
         self.program[self.programCounter] = out
 
     def RType(self, inst):
@@ -203,7 +235,7 @@ class Assembler:
         out[0] = self.binaryMapInst[inst[0]]
         out[1] = self.binaryMapRegs[inst[1]]
         out[2] = self.binaryMapRegs[inst[2]]
-        out[3] = (int(inst[3]))
+        out[3] = int(inst[3])
         self.program[self.programCounter] = out
 
     def SType(self, inst):
@@ -222,16 +254,46 @@ class Assembler:
             self.program[self.programCounter] = out #Hacky bullshit to make surethat I change this later
             self.programCounter += 1
 
+
+    def run(self, inPath, outPath):
+        self.assemble(inPath)
+        self.expandSymbols()
+        self.printAsm(outPath)
+
     def __init__(self, progStart):
         progStart = 0
         self.progStart = progStart
 
 if __name__ == '__main__':
-    tempPath = 'RelPrime.asm'
-    tempOut = 'RelPrime.out'
-    asm = Assembler(0)
-    asm.debug = True
-    asm.assemble(tempPath)
-    asm.printAsm(tempOut)
-
+    import sys
     
+    helpPrint = """The use of this program:
+assembler infile.asm <outfile.bin> <debug>
+-h:     Prints this message
+
+if the outfile is not specified, it will write to out.bin
+if 'debug'(all lower) is passed anywhere, it will toggle debugging mode
+
+This is still a work in progress"""
+
+    if '-h' in sys.argv:
+        print(helpPrint) 
+        sys.exit(0)
+
+    inFile = ''
+    outFile = 'out.bin'
+    asm = Assembler(0)
+    if 'debug' in sys.argv:
+        asm.debug = True
+
+    for arg in sys.argv:
+        if '.asm' in arg:
+            inFile = arg
+        elif '.bin' in arg:
+            outFile = arg
+
+    if inFile is '':
+        print(helpPrint)
+        sys.exit(0)
+    
+    asm.run(inFile, outFile)
