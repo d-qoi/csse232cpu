@@ -7,37 +7,36 @@ class Assembler:
     globalDef = {}
     symbolDef = {}
 
-    binaryMapInst = {'add':0x0, 
-                'adu':0x1,
-                'sub':0x2,
-                'sbu':0x3,
-                'sll':0x4,
-                'srl':0x5,
-                'sra':0x6,
-                'and':0x7,
-                'orr':0x8,'or':0x8,
-                'xor':0x9,
-                'not':0xA,
-                'tsc':0xB,
-                'ldi':0xE, 'li':0xE,
+    binaryMapInst = {'and':0x0, 
+                'orr':0x1,
+                'xor':0x2,
+                'not':0x3,
+                'tsc':0x4,
+                'slt':0x5,
+                'sll':0x6,
+                'srl':0x7,
+                'sra':0x8,
+                'add':0x9,
+                'sub':0xA,
                 'cpy':0xF,
-                'jr':0x2,
-                'rsh':0x3,
-                'beq':0x4,
-                'bnq':0x5,'bne':0x5,
-                'bgt':0x6,
+                'beq':0x2,
+                'bne':0x3,
+                'bgt':0x4,
+                'blt':0x5,
+                'jr':0x6,
                 'r':0x7,
                 'w':0x8,
+                'rsh':0xE,
                 'sudo':0xF}
 
-    binaryMapRegs = {'$0':0x0,'$00':0x0,'$z0':0x0,'$zz':0x0,
-                    '$pc':0x1,
-                    '$sp':0x2,
-                    '$ra':0x3,
-                    '$s0':0x4,
-                    '$s1':0x5,
-                    '$s2':0x6,
-                    '$s3':0x7,
+    binaryMapRegs = {'$0':0x0,'$00':0x0,'$z0':0x0,'$zz':0x0, '$zero':0x0,
+                    '$a0':0x1,
+                    '$a1':0x2,
+                    '$pc':0x3,
+                    '$sp':0x4,
+                    '$ra':0x5,
+                    '$s0':0x6,
+                    '$s1':0x7,
                     '$t0':0x8,
                     '$t1':0x9,
                     '$t2':0xA,
@@ -51,13 +50,14 @@ class Assembler:
     ATypeList = {'add','adu','sub','sbu','sll','srl','sra','and','orr','or',
                 'xor','not','tsc','ldi','li','cpy'}
 
-    PseudoList = {'jl','j','li','ldi'} # Please update and see the method
-
-    BTypeList = {'beq','bnq','bne','bgt'}
-    HTypeList = {'rsh'}
+    BTypeList = {'beq','bnq','bne','bgt','blt','r','w'}
+    HTypeList = {'rsh','sudo'}
     JTypeList = {'jr'}
-    RTypeList = {'r','w'}
-    STypeList = {'sudo'}
+    #RTypeList = {'r','w'}
+    #STypeList = {'sudo'}
+
+
+    PseudoList = {'jal','j'} # Please update and see the method
 
     def assemble(self, inPath):
         # This cannot be a file read in, it must be a list to pass
@@ -67,14 +67,14 @@ class Assembler:
                 if instruction is '': #eof
                     break
                 instruction = instruction.strip().lower()
-                if instruction is '': #empty line
+                if instruction is '': #empty line?
                     continue
 
 
                 if '#' in instruction: #cutting out comments
                     instruction = instruction[0:instruction.index('#')] 
 
-                inst = [item.strip().strip(',') for item in instruction.split()]
+                inst = [x for x in [item for item in instruction.split()] if x] #Brilliant!
                 # I don't like this line, but it is shorter than alternatives
                 # This line trims the list into specific values
 
@@ -101,10 +101,10 @@ class Assembler:
                         self.HType(self.program[self.programCounter])
                     elif self.program[self.programCounter][0] in self.JTypeList:
                         self.JType(self.program[self.programCounter])
-                    elif self.program[self.programCounter][0] in self.RTypeList:
-                        self.RType(self.program[self.programCounter])
-                    elif self.program[self.programCounter][0] in self.STypeList:
-                        self.SType(self.program[self.programCounter])
+#                    elif self.program[self.programCounter][0] in self.RTypeList:
+#                        self.RType(self.program[self.programCounter])
+#                    elif self.program[self.programCounter][0] in self.STypeList:
+#                        self.SType(self.program[self.programCounter])
                     elif self.program[self.programCounter][0] in self.PseudoList: #sudo instruction expansion
                         self.pseudoExpand(self.program[self.programCounter])
                         if self.debug:
@@ -204,12 +204,30 @@ Please be careful with this.
             self.program.insert(self.programCounter + 1, inst[3])
             self.programCounter += 1 # because I am inserting the PC, the immeadiate needs to be increased
 
+            #read 
+            # r d o(s)
+            # r d s o
+
+            # write
+            # w s o(d)
+            # w d s o
     def BType(self, inst):
         out = ['','','','']
-        out[0] = self.binaryMapInst[inst[0]]
-        out[1] = self.binaryMapRegs[inst[1]]
-        out[2] = self.binaryMapRegs[inst[2]]
-        out[3] = inst[3]
+        if inst[0] in ['r','w']:
+            temp = inst[2][:-1].split('(') #Splitting o(s) to o s
+            out[0] = self.binaryMapInst[inst[0]]
+            out[3] = temp[0]
+            if inst[0] is 'r':
+                out[1] = self.binaryMapRegs[inst[1]]
+                out[2] = self.binaryMapRegs[temp[1]]
+            else:
+                out[1] = self.binaryMapRegs[temp[1]]
+                out[2] = self.binaryMapRegs[inst[1]]
+        else:
+            out[0] = self.binaryMapInst[inst[0]]
+            out[1] = self.binaryMapRegs[inst[1]]
+            out[2] = self.binaryMapRegs[inst[2]]
+            out[3] = inst[3]
         self.program[self.programCounter] = out
 
     def HType(self, inst):
@@ -280,12 +298,12 @@ This is still a work in progress"""
         print(helpPrint) 
         sys.exit(0)
 
-    inFile = ''
+    inFile = 'RelPrime.asm'
     outFile = 'out.bin'
     asm = Assembler(0)
     if 'debug' in sys.argv:
         asm.debug = True
-
+    asm.debug = True
     for arg in sys.argv:
         if '.asm' in arg:
             inFile = arg
