@@ -59,6 +59,14 @@ class Assembler:
 
     PseudoList = {'jal','j'} # Please update and see the method
 
+    def checkInst(self, inst):
+        if not inst[0] in self.binaryMapInst:
+            raise Exception('Instruction not in instructions', inst[0])
+        for i in inst:
+            if '$' in i and not i in self.binaryMapRegs:
+                raise Exception('Register not real',i)
+
+
     def assemble(self, inPath):
         # This cannot be a file read in, it must be a list to pass
         with open(inPath, 'r') as prog:
@@ -86,6 +94,9 @@ class Assembler:
                     if len(inst) is 0:
                         continue
 
+                #Checking for everything!
+                self.checkInst(inst)
+
                 self.program.append(inst) # append program to inst
                 #Appending the new line of asm to the end of the program, and reading from the program counter to update the program to contain the converted line
                 # I am doing this to account for the fact that all pseudo instructions are going to make this code bigger
@@ -111,7 +122,7 @@ class Assembler:
                             print(self.program[-3:],self.program[self.programCounter-1])
                         continue
                     else:
-                        raise NameError("Unknown Instruction:", self.program[self.programCounter][0])
+                        raise Exception("Unknown Instruction:", self.program[self.programCounter][0])
 
                     self.programCounter += 1
                     #debugging
@@ -146,7 +157,7 @@ class Assembler:
                             if self.debug:
                                 print(self.program[i])
                     else:
-                        raise NameError("Unknown use of Synmbols: " + str(self.program[i]))
+                        raise Exception("Unknown use of Synmbols: " + str(self.program[i]))
             elif len(self.program[i]) is 3: #to make sure that it can handel jumps
                 if self.program[i][0] in [0x2]:
                     if self.program[i][2] in self.symbolDef:
@@ -200,7 +211,7 @@ Please be careful with this.
             out[1] = self.binaryMapRegs[inst[1]]
             out[2] = self.binaryMapRegs[inst[2]]
             out[3] = self.binaryMapInst[inst[0]]
-            self.program[self.programCounter] = out
+            self.program[self.programCounter] = out 
             self.program.insert(self.programCounter + 1, inst[3])
             self.programCounter += 1 # because I am inserting the PC, the immeadiate needs to be increased
 
