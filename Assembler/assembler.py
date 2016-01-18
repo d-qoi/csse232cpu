@@ -1,3 +1,5 @@
+import re
+
 class Assembler:
 
     debug = False
@@ -59,8 +61,13 @@ class Assembler:
 
     PseudoList = {'jal','j'} # Please update and see the method
 
+    def __init__(self, progStart):
+        import re
+        progStart = 0
+        self.progStart = progStart
+
     def checkInst(self, inst):
-        if not inst[0] in self.binaryMapInst:
+        if not inst[0] in self.binaryMapInst.keys()|self.PseudoList:
             raise Exception('Instruction not in instructions', inst[0])
         for i in inst:
             if '$' in i and not i in self.binaryMapRegs:
@@ -70,10 +77,8 @@ class Assembler:
     def assemble(self, inPath):
         # This cannot be a file read in, it must be a list to pass
         with open(inPath, 'r') as prog:
-            while True:
-                instruction = prog.readline().strip()
-                if instruction is '': #eof
-                    break
+            for instruction in prog: #should read to EOF
+                #instruction = prog.readline().strip()
                 instruction = instruction.strip().lower()
                 if instruction is '': #empty line?
                     continue
@@ -82,17 +87,22 @@ class Assembler:
                 if '#' in instruction: #cutting out comments
                     instruction = instruction[0:instruction.index('#')] 
 
-                inst = [x for x in [item for item in instruction.split()] if x] #Brilliant!
+                #inst = [x for x in [item for item in instruction.split()] if x] #Brilliant!
+                inst = re.split('[ ,\(\)]',instruction)
+                inst = [x for x in inst if x]
                 # I don't like this line, but it is shorter than alternatives
                 # This line trims the list into specific values
 
-                if ':' in inst[0]:
+                if not len(inst): #empty line, would break below
+                    continue
+
+                if ':' in inst[0] and len(inst):
                     self.symbolDef[inst[0].strip()[0:-1]] = len(self.program) #add to the symbol
                     if self.debug:
                         print(self.symbolDef)
                     inst = inst[1:] #remove the symbol
-                    if len(inst) is 0:
-                        continue
+
+                
 
                 #Checking for everything!
                 self.checkInst(inst)
@@ -181,9 +191,19 @@ Please be careful with this.
             for line in self.program:
                 if not isinstance(line, str):
                     dest.write('0x')
+                else:
+                    if line.isdigit():
+                        dest.write(hex(int(line)))
+                    else:
+                        dest.write(line)
+                    dest.write('\n')
+                    continue
                 for inst in line:
                     if isinstance(inst, str):
-                        dest.write(inst)
+                        if inst.isdigit():
+                            dest.write(hex(int(inst))[2:])
+                        else:
+                            dest.write(inst)
                     else:
                         dest.write(hex(inst)[2:])
                 dest.write('\n')
@@ -193,7 +213,7 @@ Please be careful with this.
 # If this is changed remember to change the list of instructions at the top
     def AType(self, inst):
         out = [0x0,'','','']
-        if '$' in inst[1] and '$' in inst[2]: # two registers
+        if '$' in inst[1] and '$' in inst[2] and len(inst) is 3: # two registers
             out[1] = self.binaryMapRegs[inst[1]]
             out[2] = self.binaryMapRegs[inst[2]]
             out[3] = self.binaryMapInst[inst[0]]
@@ -225,16 +245,15 @@ Please be careful with this.
     def BType(self, inst):
         out = ['','','','']
         if inst[0] in ['r','w']:
-            temp = inst[2][:-1].split('(') #Splitting o(s) to o s
             out[0] = self.binaryMapInst[inst[0]]
-            out[3] = temp[0]
+            out[3] = inst[2]
             if inst[0] is 'r':
-                out[1] = self.binaryMapRegs[inst[1]]
-                out[2] = self.binaryMapRegs[temp[1]]
+                out[1] = self.binaryMapRegs[inst[1]] #setting destination
+                out[2] = self.binaryMapRegs[inst[3]] #setting source
             else:
-                out[1] = self.binaryMapRegs[temp[1]]
-                out[2] = self.binaryMapRegs[inst[1]]
-        else:
+                out[1] = self.binaryMapRegs[inst[3]] #setting dest
+                out[2] = self.binaryMapRegs[inst[1]] #setting srouce
+        else: #Handeling Branches
             out[0] = self.binaryMapInst[inst[0]]
             out[1] = self.binaryMapRegs[inst[1]]
             out[2] = self.binaryMapRegs[inst[2]]
@@ -291,10 +310,6 @@ Please be careful with this.
         self.expandSymbols()
         self.printAsm(outPath)
 
-    def __init__(self, progStart):
-        progStart = 0
-        self.progStart = progStart
-
 if __name__ == '__main__':
     import sys
     
@@ -311,8 +326,8 @@ This is still a work in progress"""
         print(helpPrint) 
         sys.exit(0)
 
-    inFile = 'RelPrime.asm'
-    outFile = 'out.bin'
+    inFile = 'Tests.asm'
+    outFile = 'Tests.bin'
     asm = Assembler(0)
     if 'debug' in sys.argv:
         asm.debug = True
