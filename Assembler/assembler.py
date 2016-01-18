@@ -273,15 +273,17 @@ Please be careful with this.
         self.program[self.programCounter] = out
 
     def pseudoExpand(self, inst):
-        if 'jl' in inst or 'j' in inst:
-            if self.debug:
+        if self.debug:
                 print(inst)
+        if 'j' in inst:
             out = ['','','']
             out[0] = self.binaryMapInst['jr']
             out[1] = self.binaryMapRegs['$pc']
             out[2] = inst[1]
             self.program[self.programCounter] = out #Hacky bullshit to make surethat I change this later
             self.programCounter += 1
+        elif 'jal' in inst:
+            pass
 
 
     def run(self, inPath, outPath):
