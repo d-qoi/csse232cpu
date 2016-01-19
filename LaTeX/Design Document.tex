@@ -13,7 +13,7 @@
 \begin{document}
 \maketitle
 \section{Registers}
-	There are a total of 76 16-bit registers; 12 are fixed and 64 (spilt into 16 groups of 4) "schwapable" registers.  Some registers have alias names, see Section 5.3.1 for a list.
+	There are a total of 76 16-bit registers; 12 are fixed and 64 (spilt into 16 groups of 4) "schwapable" registers.  Some registers have alias names, see Section 6.3.1 for a list.
 	\subsection{Register Names and Descriptions}
 		\begin{center}
 			\begin{tabular}{| c | c | c | c |}
@@ -30,8 +30,8 @@
 				    \$h0 - \$h3 & 12 - 15 & Schwap                 & -   \\
 				\hline
 			\end{tabular} \\
-			$^\dagger$See Section 5.1.1-1 for details\\
-			$^\ddagger$See Section 5.1.1-2 for details
+			$^\dagger$See Section 6.1.1-1 for details\\
+			$^\ddagger$See Section 6.1.1-2 for details
 		\end{center}
 	\subsection{Schwap Registers}
 		The "schwap" registers are registers that appear to be swapped using a command.  There is no data movement when schwapping, it only changes which registers the \$h0 - \$h3 refer to.  There are 8 groups the user can use for general purpose and 8 reserved groups.
@@ -48,13 +48,13 @@
 					    15           & Go to the last used group & -  \\
 					\hline
 				\end{tabular} \\
-				$^\dagger$See Section 5.1.2-1 for details
+				$^\dagger$See Section 6.1.2-1 for details
 			\end{center}
 \newpage
 \section{Instructions}
 	All instructions are 16-bits.  The destination register is also used as a source unless otherwise noted.  All offsets are bit shifted left by 1 since all instructions are 2 bytes long.
 	\subsection{Instruction Types and Bit Layouts}
-		Instructions can be manually translated by putting the bits for each of the components of the instructions in the places listed by the diagrams for each type.  The OP codes, function codes, and types can by found on the "Core Instructions Summary" (2.2.1) table.  The destination and source are register numbers, which can be found under the "Register Names and Descriptions" (1.1) table.  Schwap group numbers can be found under the "Schwap Group Numbers, Descriptions, and Uses" (1.2.1) table.  The active schwap group is not preserved over a function call.  See Section 5.2.1 for notes on the types and layouts.
+		Instructions can be manually translated by putting the bits for each of the components of the instructions in the places listed by the diagrams for each type.  The OP codes, function codes, and types can by found on the "Core Instructions Summary" (2.2.1) table.  The destination and source are register numbers, which can be found under the "Register Names and Descriptions" (1.1) table.  Schwap group numbers can be found under the "Schwap Group Numbers, Descriptions, and Uses" (1.2.1) table.  The active schwap group is not preserved over a function call.  See Section 6.2.1 for notes on the types and layouts.
 		\subsubsection{A-Type}
 			\begin{center}
 				\begin{tabular}{l r l r l r l r}
@@ -97,7 +97,7 @@
 				\end{tabular}
 			\end{center}
 	\subsection{Core Instructions}
-		Some instructions have alias names, see Section 5.3.2 for a list.
+		Some instructions have alias names, see Section 6.3.2 for a list.
 		\subsubsection{Core Instructions Summary}
 		\begin{center} \begin{tabular}{| c | c | c | c | c | c |} \hline
 			\thead{OP \\ Code} & \thead{Function \\ Code} & Name & Type & Description \\ \hline
@@ -253,7 +253,7 @@
 				\item[sudo:] Does what "syscall" in MIPS does, just type "sudo" for the instruction.
 			\end{itemize}
 	\subsection{Pseudo Instructions}
-		There are two types of pseudo instructions.  One are instructions which are always pseudo instructions, the other are sometimes pseudo depending on the conditions.  Some instructions have alias names, see Section 5.3.2 for a list.
+		There are two types of pseudo instructions.  One are instructions which are always pseudo instructions, the other are sometimes pseudo depending on the conditions.  Some instructions have alias names, see Section 6.3.2 for a list.
 		\subsubsection{Always Pseudo Instructions}
 			\begin{center} \begin{tabular}{| c | c | c | c |} \hline
 				Name & Syntax    & Actual Code & Description \\ \hline
@@ -270,8 +270,27 @@
 				bgt  & bgt [src0] [src1] label & \thead{blt [src0] [src1] Next \\ j label \\ Next:} & \thead{Branching up or branching down \\ more than 16 instructions}\\ \hline
 				blt  & blt [src0] [src1] label & \thead{bgt [src0] [src1] Next \\ j label \\ Next:} & \thead{Branching up or branching down \\ more than 16 instructions}\\ \hline
 			\end{tabular} \end{center}
+\section{RTL}
+	\subsection{Components}
+	\subsection{Summary}
+		\begin{center} \begin{tabular}{| c | c | c | c | c | c | c | c |} \hline
+			\multirow{2}{*}{Step} & \multirow{2}{*}{A-Type} & \multicolumn{3}{c|}{B-Type} & \multicolumn{2}{c|}{H-Type} & \multirow{2}{*}{J-Type} \\ \cline{3-7}
+			& & Branches & Read & Write & Schwap & Sudo & \\ \hline
+			\thead{Get \\ instruction} & \multicolumn{7}{c|}{\thead{IR = MEM[PC] \\ PC += 2}} \\ \hline
+			\thead{Decode ins-\\truction and \\ get stuff from \\ registers} & \multicolumn{7}{c|}{\thead{if(OP==0x1)\{Imm = MEM[PC]; PC += 2\}\\ R0 = reg\#IR[8:11] \\ R1 = reg\#IR[7:4] \\ ALUout = PC + SE(IR[3:0]) \\ Hreg = IR[3:0]}} \\ \hline
+			\thead{Do \\ computation} & \thead{ALUout = \\ R0 @ R1} & \thead{if(R0==R1):\\PC = ALUout} & \multicolumn{2}{c|}{\thead{ALUout = \\ R1 + SE(Hreg$<<$1)}} & \thead{SchLatch\\= Hreg} & \thead{Change\\on Code\#} & \thead{PC = R0\\+ IR[7:0]} \\ \hline
+			\thead{Output} & \thead{R0 = \\ALUout} & & \thead{MemRead = \\ MEM[ALUout]} & \thead{MEM[ALUout] \\= R1} & \multicolumn{3}{c|}{ } \\ \hline
+		\end{tabular} \end{center}
+	\subsection{Tests}
 \section{Assembler and Coding Practices}
-	
+	\subsection{Assembler}
+		\begin{enumerate}
+			\item The order of the parameters for "r" must be flipped.  The hardware expects the memory location in the 2nd register, not the first as in the syntax.
+		\end{enumerate}
+	\subsection{Code}
+		\begin{enumerate}
+			\item Avoid branching up and more than 16 instructions down.  The hardware implementation of branching limits branching to only going down a maximum of 16 instructions, but the assembler will convert these to a combination of a branch and jump.
+		\end{enumerate}
 \section{Examples}
 	\lstset{language=sh}
 	\subsection{Basic Use Examples}
@@ -382,10 +401,10 @@ Exit:
 				34 & 1C0F & 74 & 300A \\ \hline
 				36 & 000C & 76 & 0C8F \\ \hline
 				38 & 2C00 & 78 & 2300 \\ \hline
-				3A & 301F & & \\ \hline
-				3C & 300A & & \\ \hline
-				3E & 0C5F & & \\ \hline
-				40 & 2600 & & \\ \hline
+				3A & 301F \\ \cline{1-2}
+				3C & 300A \\ \cline{1-2}
+				3E & 0C5F \\ \cline{1-2}
+				40 & 2600 \\ \cline{1-2}
 			\end{tabular}
 		\end{center}
 \newpage
