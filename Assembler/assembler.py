@@ -74,7 +74,7 @@ class Assembler:
                 raise Exception('Register not real',i)
 
 
-    def assemble(self, inPath):
+    def readFile(self, inPath):
         # This cannot be a file read in, it must be a list to pass
         with open(inPath, 'r') as prog:
             for instruction in prog: #should read to EOF
@@ -107,38 +107,41 @@ class Assembler:
                 #Checking for everything!
                 self.checkInst(inst)
 
-                self.program.append(inst) # append program to inst
+                self.program.append(inst) 
+                # append program to inst
                 #Appending the new line of asm to the end of the program, and reading from the program counter to update the program to contain the converted line
                 # I am doing this to account for the fact that all pseudo instructions are going to make this code bigger
                 # If I were to continue reading from the file, then things would go badly,
                 # in this case, we can just append to the Program and let the following code take care of converting the extended program into binary/hex
 
-                while self.programCounter < len(self.program):
-                    if self.program[self.programCounter][0] in self.ATypeList:
-                        self.AType(self.program[self.programCounter])
-                    elif self.program[self.programCounter][0] in self.BTypeList:
-                        self.BType(self.program[self.programCounter])
-                    elif self.program[self.programCounter][0] in self.HTypeList:
-                        self.HType(self.program[self.programCounter])
-                    elif self.program[self.programCounter][0] in self.JTypeList:
-                        self.JType(self.program[self.programCounter])
-#                    elif self.program[self.programCounter][0] in self.RTypeList:
-#                        self.RType(self.program[self.programCounter])
-#                    elif self.program[self.programCounter][0] in self.STypeList:
-#                        self.SType(self.program[self.programCounter])
-                    elif self.program[self.programCounter][0] in self.PseudoList: #sudo instruction expansion
-                        self.pseudoExpand(self.program[self.programCounter])
-                        if self.debug:
-                            print(self.program[-3:],self.program[self.programCounter-1])
-                        continue
-                    else:
-                        raise Exception("Unknown Instruction:", self.program[self.programCounter][0])
 
-                    self.programCounter += 1
-                    #debugging
-                    if self.debug:
-                        print(self.program)
-                        print(self.programCounter, str(len(self.program)))
+                self.programCounter += 1
+                #debugging
+                if self.debug:
+                    print(self.program)
+                    print(self.programCounter, str(len(self.program)))
+
+    def assemble(self):
+        self.programCounter = 0
+        while self.programCounter < len(self.program):
+            if self.program[self.programCounter][0] in self.ATypeList:
+                self.AType(self.program[self.programCounter])
+            elif self.program[self.programCounter][0] in self.BTypeList:
+                self.BType(self.program[self.programCounter])
+            elif self.program[self.programCounter][0] in self.HTypeList:
+                self.HType(self.program[self.programCounter])
+            elif self.program[self.programCounter][0] in self.JTypeList:
+                self.JType(self.program[self.programCounter])
+#           elif self.program[self.programCounter][0] in self.RTypeList:
+#               self.RType(self.program[self.programCounter])
+#           elif self.program[self.programCounter][0] in self.STypeList:
+#                self.SType(self.program[self.programCounter])
+            elif self.program[self.programCounter][0] in self.PseudoList: #sudo instruction expansion
+                self.pseudoExpand(self.program[self.programCounter])
+                if self.debug:
+                    print(self.program[-3:],self.program[self.programCounter-1])
+            self.programCounter += 1
+
 
 
     def branchToJumpDown(self, i):
@@ -155,7 +158,10 @@ class Assembler:
                 temp = self.program[i]
             if len(self.program[i]) is 4: # to make sure that constants don't crash this
                 if self.program[i][3] in self.symbolDef: # to make sure that it is a correct symbol
-                    if self.program[i][0] in [0x4,0x5,0x6]: # This is all of the branching instructions
+                    if self.program[i][0] in [self.binaryMapInst['beq'],
+                                            self.binaryMapInst['bne'],
+                                            self.binaryMapInst['bgt'],
+                                            self.binaryMapInst['blt']: # This is all of the branching instructions
                         if (self.symbolDef[self.program[i][3]] - i + 2) > 15:
                             branchToJumpDown(i)
                         elif (self.symbolDef[self.program[i][3]] - i + 2) < 0:
@@ -169,7 +175,7 @@ class Assembler:
                     else:
                         raise Exception("Unknown use of Synmbols: " + str(self.program[i]))
             elif len(self.program[i]) is 3: #to make sure that it can handel jumps
-                if self.program[i][0] in [0x2]:
+                if self.program[i][0] in [self.binaryMapInst['jr']]:
                     if self.program[i][2] in self.symbolDef:
                         if self.debug:
                             print(self.program[i], hex((self.symbolDef[self.program[i][2]] - i + 2) & 0xFF))
@@ -291,22 +297,24 @@ Please be careful with this.
         out[0] = self.binaryMapInst[inst[0]]
         self.program[self.programCounter] = out
 
-    def pseudoExpand(self, inst):
+    def pseudoExpand(self, inst): #Hacky bullshit to make surethat I change this later
+    #I am probably not going to fix this
         if self.debug:
-                print(inst)
+            print(inst)
         if 'j' in inst:
             out = ['','','']
             out[0] = self.binaryMapInst['jr']
             out[1] = self.binaryMapRegs['$pc']
             out[2] = inst[1]
-            self.program[self.programCounter] = out #Hacky bullshit to make surethat I change this later
-            self.programCounter += 1
+            self.program[self.programCounter] = out 
         elif 'jal' in inst:
-            pass
+            out = ['cpy','$ra',4]
+
 
 
     def run(self, inPath, outPath):
-        self.assemble(inPath)
+        self.readFile(inPath)
+        self.asseble()
         self.expandSymbols()
         self.printAsm(outPath)
 
