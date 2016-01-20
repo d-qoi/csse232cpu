@@ -77,7 +77,7 @@
 					15 & 12 & 11 & 8 & 7 & 4 & 3 & 0
 				\end{tabular}
 			\end{center}
-			If it is being used for branching it consists of a 4-bit OP code, 4-bit 1st source (R0), 4-bit 2nd source (R1), and a 4-bit (unsigned) offset. If it is being used for reading and writing to memory, it consists of a 4-bit OP code, 4-bit destination (R0 not used as a source), 4-bit source (R1), and a 4-bit (unsigned) offset.
+			If it is being used for branching it consists of a 4-bit OP code, 4-bit 1st source (R0), 4-bit 2nd source (R1), and a 4-bit (unsigned) offset. If it is being used for reading from memory it consists of a 4-bit OP code, 4-bit destination (R0 not used as a source), 4-bit source (R1), and a 4-bit (unsigned) offset.  If it is being used for writing to memory it consists of a 4-bit OP code, 4-bit source (R0), 4-bit destination (R1), and a 4-bit (unsigned) offset.
 		\subsubsection{H-Type}
 			\begin{center}
 				\begin{tabular}{l r l r l r l r}
@@ -272,16 +272,48 @@
 			\end{tabular} \end{center}
 \section{RTL}
 	\subsection{Components}
-	\subsection{Summary}
+		List of the components used in the the RTL in approximately the same order as they appear:
+		\begin{itemize}
+			\item[IR:]
+			\item[MEM:]
+			\item[PC:]
+			\item[OP:]
+			\item[Imm:]
+			\item[R0:]
+			\item[R1:]
+			\item[reg\#*:]
+			\item[ALUout:]
+			\item[SE(*):]
+			\item[Hreg:]
+			\item[@:]
+			\item[SchLatch:]
+			\item[Code\#:]
+			\item[MemRead:]
+		\end{itemize}
+	\subsection{Summary Chart}
 		\begin{center} \begin{tabular}{| c | c | c | c | c | c | c | c |} \hline
 			\multirow{2}{*}{Step} & \multirow{2}{*}{A-Type} & \multicolumn{3}{c|}{B-Type} & \multicolumn{2}{c|}{H-Type} & \multirow{2}{*}{J-Type} \\ \cline{3-7}
 			& & Branches & Read & Write & Schwap & Sudo & \\ \hline
 			\thead{Get \\ instruction} & \multicolumn{7}{c|}{\thead{IR = MEM[PC] \\ PC += 2}} \\ \hline
 			\thead{Decode ins-\\truction and \\ get stuff from \\ registers} & \multicolumn{7}{c|}{\thead{if(OP==0x1)\{Imm = MEM[PC]; PC += 2\}\\ R0 = reg\#IR[8:11] \\ R1 = reg\#IR[7:4] \\ ALUout = PC + SE(IR[3:0]) \\ Hreg = IR[3:0]}} \\ \hline
 			\thead{Do \\ computation} & \thead{ALUout = \\ R0 @ R1} & \thead{if(R0==R1):\\PC = ALUout} & \multicolumn{2}{c|}{\thead{ALUout = \\ R1 + SE(Hreg$<<$1)}} & \thead{SchLatch\\= Hreg} & \thead{Change\\on Code\#} & \thead{PC = R0\\+ IR[7:0]} \\ \hline
-			\thead{Output} & \thead{R0 = \\ALUout} & & \thead{MemRead = \\ MEM[ALUout]} & \thead{MEM[ALUout] \\= R1} & \multicolumn{3}{c|}{ } \\ \hline
+			\thead{Output} & \thead{R0 = \\ALUout} & & \thead{MemRead = \\ MEM[ALUout]} & \thead{MEM[ALUout] \\= R0} & \multicolumn{3}{c|}{ } \\ \hline
+			\thead{Output 2} & \multicolumn{2}{c|}{ } & \thead{R0 = \\ MemRead} & \multicolumn{4}{c|}{ } \\ \hline
 		\end{tabular} \end{center}
 	\subsection{Tests}
+		\subsubsection{A-Type}
+		\subsubsection{B-Type}
+			\begin{itemize}
+				\item[Branches:]
+				\item[Read:]
+				\item[Write:]
+			\end{itemize}
+		\subsubsection{H-Type}
+			\begin{itemize}
+				\item[Schwap:]
+				\item[Sudo:]
+			\end{itemize}
+		\subsubsection{J-Type}
 \section{Assembler and Coding Practices}
 	\subsection{Assembler}
 		\begin{enumerate}
