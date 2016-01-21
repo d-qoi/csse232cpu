@@ -5,6 +5,7 @@ class Assembler:
     debug = False
     progStart = 0
     programCounter = 0
+    symOff = 1 #I am not sure how much to offset the symbols, this will be the thing to change
     program = []
     globalDef = {}
     symbolDef = {}
@@ -101,8 +102,8 @@ class Assembler:
                     if self.debug:
                         print(self.symbolDef)
                     inst = inst[1:] #remove the symbol
-
-                
+                    if not len(inst): #empty line, would break below
+                        continue
 
                 #Checking for everything!
                 self.checkInst(inst)
@@ -121,6 +122,14 @@ class Assembler:
                     print(self.program)
                     print(self.programCounter, str(len(self.program)))
 
+
+    # for updating things after expanding with pseudo instructions
+    def updateSymbols(self, line, offset):
+        for sym,val in self.symbolDef:
+            if val >= line:
+                self.symbolDef[sym] += offset
+
+
     def assemble(self):
         self.programCounter = 0
         while self.programCounter < len(self.program):
@@ -136,24 +145,41 @@ class Assembler:
 #               self.RType(self.program[self.programCounter])
 #           elif self.program[self.programCounter][0] in self.STypeList:
 #                self.SType(self.program[self.programCounter])
-            elif self.program[self.programCounter][0] in self.PseudoList: #sudo instruction expansion
-                self.pseudoExpand(self.program[self.programCounter])
-                if self.debug:
-                    print(self.program[-3:],self.program[self.programCounter-1])
+#            elif self.program[self.programCounter][0] in self.PseudoList: #sudo instruction expansion
+#                self.pseudoExpand(self.program[self.programCounter])
+#                if self.debug:
+#                    print(self.program[-3:],self.program[self.programCounter-1])
             self.programCounter += 1
 
 
 
-    def branchToJumpDown(self, i):
-        self.program[i][3] = hex((self.symbolDef[self.program[i][3]] - i + 2) & 0xF)[2:] + " Needs to be changed, BTJD"
+    def branchToJump(self, i):
+        #self.program[i][3] = hex((self.symbolDef[self.program[i][3]] - i + 2) & 0xF)[2:] + " Needs to be changed, BTJD"
+        if self.debug:
+            temp = self.program[i]
+        updateSymbols(i,1)
+        sym = self.program[i][3]
+        # jr $pc :sym
+        jump = [self.binaryMapInst['jr'],self.binaryMapRegs['$pc'],sym]
+        self.program[i][3] = 1;
+        if self.program[i][0] is self.binaryMapInst['beq']:
+            self.program[i][0] = self.binaryMapInst['bne']
+        elif self.program[i][0] is self.binaryMapInst['bne']:
+            self.program[i][0] = self.binaryMapInst['beq']
+        elif self.program[i][0] is self.binaryMapInst['bgt']:
+            self.program[i][0] = self.binaryMapInst['blt']
+        elif self.program[i][0] is self.binaryMapInst['blt']:
+            self.program[i][0] = self.binaryMapInst['bgt']
+        self.program.insert(i+1,jump)
 
-    def branchToJumpUp(self, i):
-        self.program[i][3] = hex((self.symbolDef[self.program[i][3]] - i + 2) & 0xF)[2:] + " Needs to be changed, BTJU"
+        if self.debug:
+            print(temp,"became:\n",self.program[i],'\n',self.program[i+1])
 
     def expandSymbols(self):
         if self.debug:
             print(self.symbolDef)
-        for i in range(0,len(self.program)):
+        i = 0
+        while i < len(self.program):
             if self.debug:
                 temp = self.program[i]
             if len(self.program[i]) is 4: # to make sure that constants don't crash this
@@ -161,15 +187,15 @@ class Assembler:
                     if self.program[i][0] in [self.binaryMapInst['beq'],
                                             self.binaryMapInst['bne'],
                                             self.binaryMapInst['bgt'],
-                                            self.binaryMapInst['blt']: # This is all of the branching instructions
-                        if (self.symbolDef[self.program[i][3]] - i + 2) > 15:
-                            branchToJumpDown(i)
-                        elif (self.symbolDef[self.program[i][3]] - i + 2) < 0:
-                            branchToJumpUp(i)
+                                            self.binaryMapInst['blt']]: # This is all of the branching instructions
+                        if (self.symbolDef[self.program[i][3]] - i + self.symOff) > 15:
+                            branchToJump(i)
+                        elif (self.symbolDef[self.program[i][3]] - i + self.symOff) < 0:
+                            branchToJump(i)
                         else:
                             if self.debug:
-                                print(self.program[i], hex((self.symbolDef[self.program[i][3]] - i + 2) & 0xF))
-                            self.program[i][3] = hex((self.symbolDef[self.program[i][3]] - i + 2) & 0xF)[2:]
+                                print(self.program[i], hex((self.symbolDef[self.program[i][3]] - i + self.symOff) & 0xF))
+                            self.program[i][3] = hex((self.symbolDef[self.program[i][3]] - i + self.symOff) & 0xF)[2:]
                             if self.debug:
                                 print(self.program[i])
                     else:
@@ -178,12 +204,40 @@ class Assembler:
                 if self.program[i][0] in [self.binaryMapInst['jr']]:
                     if self.program[i][2] in self.symbolDef:
                         if self.debug:
-                            print(self.program[i], hex((self.symbolDef[self.program[i][2]] - i + 2) & 0xFF))
-                        self.program[i][2] = hex((self.symbolDef[self.program[i][2]] - i + 2) & 0xFF)[2:]
+                            print(self.program[i], hex((self.symbolDef[self.program[i][2]] - i + self.symOff) & 0xFF))
+                        self.program[i][2] = hex((self.symbolDef[self.program[i][2]] - i + self.symOff) & 0xFF)[2:]
                         if len(self.program[i][2]) < 2:
                             self.program[i][2] = '0'+self.program[i][2]
                         if self.debug:
                             print(self.program[i])
+            i += 1 #because I can't use the for loop and expand the list
+
+
+    def pseudoExpandHelper(self, inst): #Hacky bullshit to make surethat I change this later
+    #I am probably not going to fix this
+        if self.debug:
+            print(inst,'=>')
+        if 'j' in inst:
+            out = ['jr','$pc',inst[1]]
+        elif 'jal' in inst:
+            out = [['cpy','$ra',4],
+                ['add','$ra','$pc'],
+                ['jr''$pc',inst[1]]
+
+        self.program.pop(self.programCounter)
+        out.reverse()
+        for i in out:
+            self.program.insert(self.programCounter,i)
+
+        if self.debug:
+            print(out)
+
+
+    def expandPseudo(self):
+        self.programCounter = 0;
+        while self.programCounter < len(self.program):
+            if self.program[self.programCounter][0] in self.PseudoList:
+                pseudoExpandHelper(self.program[self.programCounter])
 
 
     def printAsm(self, outFile):
@@ -276,7 +330,7 @@ Please be careful with this.
         out = ['','','']
         out[0] = self.binaryMapInst[inst[0]]
         out[1] = self.binaryMapRegs[inst[1]]
-        if len(out) is 3:
+        if len(inst) is 3:
             out[2] = hex(int(inst[2]) & 0xFF)[2:]
             if len(out[2]) is 1:
                 out[2] = '0' + out[2]
@@ -297,25 +351,12 @@ Please be careful with this.
         out[0] = self.binaryMapInst[inst[0]]
         self.program[self.programCounter] = out
 
-    def pseudoExpand(self, inst): #Hacky bullshit to make surethat I change this later
-    #I am probably not going to fix this
-        if self.debug:
-            print(inst)
-        if 'j' in inst:
-            out = ['','','']
-            out[0] = self.binaryMapInst['jr']
-            out[1] = self.binaryMapRegs['$pc']
-            out[2] = inst[1]
-            self.program[self.programCounter] = out 
-        elif 'jal' in inst:
-            out = ['cpy','$ra',4]
-
-
 
     def run(self, inPath, outPath):
         self.readFile(inPath)
-        self.asseble()
+        self.expandPseudo()
         self.expandSymbols()
+        self.assemble()
         self.printAsm(outPath)
 
 if __name__ == '__main__':
