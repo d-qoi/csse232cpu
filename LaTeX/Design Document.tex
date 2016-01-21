@@ -344,7 +344,7 @@
 			& & Branches & Read & Write & Schwap & Sudo & \\ \hline
 			\thead{Get \\ instruction} & \multicolumn{7}{c|}{\thead{IR = MEM[PC] \\ NextInst = MEM[PC+2] \\ PC += 2}} \\ \hline
 			\thead{Decode ins-\\truction and \\ get stuff from \\ registers} & \multicolumn{7}{c|}{\thead{R0 = reg\#IR[8:11] \\ R1 = (IR[3:0]==0x1) ? \{NextInst; PC += 2\} : reg\#IR[7:4] \\ ALUout = PC + SE(IR[15:12]) \\ Hreg = IR[3:0]}} \\ \hline
-			\thead{Do \\ computation} & \thead{ALUout = \\ R0 $\dagger$ R1} & \thead{PCtemp = ALUout \\ ALUout = R0 $\dagger$ R1} & \multicolumn{2}{c|}{\thead{ALUout = \\ R1 + SE(Hreg$<<$1)}} & \thead{SchLatch\\= Hreg} & \thead{Change\\on Code\#} & \thead{PC = R0\\+ IR[7:0]} \\ \hline
+			\thead{Do \\ computation} & \thead{ALUout \\= R0$\dagger$R1} & \thead{PCtemp=ALUout \\ ALUout=R0$\dagger$R1} & \multicolumn{2}{c|}{\thead{ALUout = \\ R1 + SE(Hreg$<<$1)}} & \thead{SchLatch\\= Hreg} & \thead{Change\\on\\Code\#} & \thead{PC = R0+\\SE(IR[7:0]$<<$1)} \\ \hline
 			\thead{Output} & \thead{@R0 = \\ALUout} & \thead{if(ALUout==0)\\PC = PCtemp} & \thead{MemRead = \\ MEM[ALUout]} & \thead{MEM[ALUout] \\= R0} & \multicolumn{3}{c|}{ } \\ \hline
 			\thead{Output 2} & \multicolumn{2}{c|}{ } & \thead{@R0 = \\ MemRead} & \multicolumn{4}{c|}{ } \\ \hline
 		\end{tabular} \end{center}
@@ -352,7 +352,7 @@
 		\begin{itemize}
 			\item[reg\#*:] The register at ID * in the register file
 			\item[@*:] The original register (in the register file) that was put in *
-			\item[* $\dagger$ *:] Does what ever the ALU op says should be done to the 2 values
+			\item[*$\dagger$*:] Does what ever the ALU op says should be done to the 2 values
 			\item[Code\#:] Varies based on on the sudo code number is
 		\end{itemize}
 	\subsection{Tests}
@@ -405,6 +405,11 @@
 					        & 4. & The correct action should now be performed based on the code number\\
 			\end{tabular}
 		\subsubsection{J-Type}
+			\begin{tabular}{ r  r  p{12cm} }
+					jr: & 1. & Get this instruction\\
+					    & 2. & Increase PC by 2 for the next instruction\\
+					    & 3. & PC should be changed to the value in R0 added to the sign extended, shifted to the left by one value in IR[7:0]\\
+			\end{tabular}
 \section{Assembler and Coding Practices}
 	\subsection{Assembler}
 		\begin{enumerate}
