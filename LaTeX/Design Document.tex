@@ -272,47 +272,138 @@
 			\end{tabular} \end{center}
 \section{RTL}
 	\subsection{Components}
-		List of the components used in the the RTL in approximately the same order as they appear:
-		\begin{itemize}
-			\item[IR:]
-			\item[MEM:]
-			\item[PC:]
-			\item[OP:]
-			\item[Imm:]
-			\item[R0:]
-			\item[R1:]
-			\item[reg\#*:]
-			\item[ALUout:]
-			\item[SE(*):]
-			\item[Hreg:]
-			\item[@:]
-			\item[SchLatch:]
-			\item[Code\#:]
-			\item[MemRead:]
-		\end{itemize}
+		\subsubsection{Single 16-bit Register}
+			\begin{center} \begin{tabular}{| l | l | c |} \hline 
+				I/O & Name & Size \\ \hline 
+				In  & in  & 16 \\ \hline
+				Out & out & 16 \\ \hline
+				Control & writable & 1 \\ \hline
+			\end{tabular} \end{center}
+			\begin{center} \begin{tabular}{| l | c |} \hline 
+				\multicolumn{2}{|c|}{Used as:} \\ \hline 
+				IR       & \thead{Stores the 16-bit instruction that comes from memory} \\ \hline
+				NextInst & \thead{Stores the next 16-bit instruction that comes from memory} \\ \hline
+				PC       & \thead{Program Counter} \\ \hline
+				R0       & \thead{Stores the value that comes out of reg0} \\ \hline
+				R1       & \thead{Stores the value that comes out of reg1} \\ \hline
+				ALUout   & \thead{Stores the value that comes out of the ALU} \\ \hline
+				PCtemp   & \thead{Stores the value that comes out of ALUout for PC if needed} \\ \hline
+				MemRead  & \thead{Same as IR, but is used for values} \\ \hline
+			\end{tabular} \end{center}
+		\subsubsection{Single 4-bit Register}
+			\begin{center} \begin{tabular}{| l | l | c |} \hline 
+				I/O & Name & Size \\ \hline 
+				In  & in   & 4 \\ \hline
+				Out & out  & 4 \\ \hline
+				Control & writable & 1 \\ \hline
+			\end{tabular} \end{center}
+			\begin{center} \begin{tabular}{| l | c |} \hline 
+				\multicolumn{2}{|c|}{Used as:} \\ \hline 
+				Hreg & \thead{Stores IR[3:0]} \\ \hline
+			\end{tabular} \end{center}
+		\subsubsection{4-bit Latch}
+			\begin{center} \begin{tabular}{| l | l | c |} \hline 
+				I/O & Name & Size \\ \hline 
+				In  & in   & 4 \\ \hline
+				Out & out  & 4 \\ \hline
+				Control & writable & 1 \\ \hline
+			\end{tabular} \end{center}
+			\begin{center} \begin{tabular}{| l | c |} \hline 
+				\multicolumn{2}{|c|}{Used as:} \\ \hline 
+				SchLatch & \thead{Stores schwap group number} \\ \hline
+			\end{tabular} \end{center}
+		\subsubsection{SE}
+			\begin{center} Sign extends a value \end{center}
+			\begin{center} \begin{tabular}{| l | l | c |} \hline 
+				I/O & Name & Size \\ \hline 
+				In  & in   & * \\ \hline
+				Out & out  & * \\ \hline
+			\end{tabular} \end{center}
+		\subsubsection{Main Memory}
+			\begin{center} \begin{tabular}{| l | l | c | l |} \hline 
+				I/O & Name      & Size & Description \\ \hline 
+				In  & MemAddr   & 16   & Address for data\\ \hline
+				In  & WriteData & 16   & Data to be written (at MemAddr) \\ \hline
+				Out & MemData0  & 16   & Data at MemAddr \\ \hline
+				Out & MemData1  & 16   & Data at MemAddr + 2 \\ \hline
+			\end{tabular} \end{center}
+		\subsubsection{Register File}
+			\begin{center} \begin{tabular}{| l | l | c | l |} \hline 
+				I/O & Name      & Size & Description \\ \hline 
+				In  & regID0    & 4    & ID for first register \\ \hline
+				In  & regID1    & 4    & ID for second register \\ \hline
+				In  & writable  & 2    & If data can be written to regID1/0\\ \hline
+				In  & writeData0 & 16   & Data to write to regID0 \\ \hline
+				In  & writeData1 & 16   & Data to write to regID1 \\ \hline
+				Out & reg0      & 16   & Data from regID0 \\ \hline
+				Out & reg1      & 16   & Data from regID1 \\ \hline
+			\end{tabular} \end{center}
 	\subsection{Summary Chart}
 		\begin{center} \begin{tabular}{| c | c | c | c | c | c | c | c |} \hline
 			\multirow{2}{*}{Step} & \multirow{2}{*}{A-Type} & \multicolumn{3}{c|}{B-Type} & \multicolumn{2}{c|}{H-Type} & \multirow{2}{*}{J-Type} \\ \cline{3-7}
 			& & Branches & Read & Write & Schwap & Sudo & \\ \hline
-			\thead{Get \\ instruction} & \multicolumn{7}{c|}{\thead{IR = MEM[PC] \\ PC += 2}} \\ \hline
-			\thead{Decode ins-\\truction and \\ get stuff from \\ registers} & \multicolumn{7}{c|}{\thead{if(OP==0x1)\{Imm = MEM[PC]; PC += 2\}\\ R0 = reg\#IR[8:11] \\ R1 = reg\#IR[7:4] \\ ALUout = PC + SE(IR[3:0]) \\ Hreg = IR[3:0]}} \\ \hline
-			\thead{Do \\ computation} & \thead{ALUout = \\ R0 @ R1} & \thead{if(R0==R1):\\PC = ALUout} & \multicolumn{2}{c|}{\thead{ALUout = \\ R1 + SE(Hreg$<<$1)}} & \thead{SchLatch\\= Hreg} & \thead{Change\\on Code\#} & \thead{PC = R0\\+ IR[7:0]} \\ \hline
-			\thead{Output} & \thead{R0 = \\ALUout} & & \thead{MemRead = \\ MEM[ALUout]} & \thead{MEM[ALUout] \\= R0} & \multicolumn{3}{c|}{ } \\ \hline
-			\thead{Output 2} & \multicolumn{2}{c|}{ } & \thead{R0 = \\ MemRead} & \multicolumn{4}{c|}{ } \\ \hline
+			\thead{Get \\ instruction} & \multicolumn{7}{c|}{\thead{IR = MEM[PC] \\ NextInst = MEM[PC+2] \\ PC += 2}} \\ \hline
+			\thead{Decode ins-\\truction and \\ get stuff from \\ registers} & \multicolumn{7}{c|}{\thead{R0 = reg\#IR[8:11] \\ R1 = (IR[3:0]==0x1) ? \{NextInst; PC += 2\} : reg\#IR[7:4] \\ ALUout = PC + SE(IR[15:12]) \\ Hreg = IR[3:0]}} \\ \hline
+			\thead{Do \\ computation} & \thead{ALUout = \\ R0 $\dagger$ R1} & \thead{PCtemp = ALUout \\ ALUout = R0 $\dagger$ R1} & \multicolumn{2}{c|}{\thead{ALUout = \\ R1 + SE(Hreg$<<$1)}} & \thead{SchLatch\\= Hreg} & \thead{Change\\on Code\#} & \thead{PC = R0\\+ IR[7:0]} \\ \hline
+			\thead{Output} & \thead{@R0 = \\ALUout} & \thead{if(ALUout==0)\\PC = PCtemp} & \thead{MemRead = \\ MEM[ALUout]} & \thead{MEM[ALUout] \\= R0} & \multicolumn{3}{c|}{ } \\ \hline
+			\thead{Output 2} & \multicolumn{2}{c|}{ } & \thead{@R0 = \\ MemRead} & \multicolumn{4}{c|}{ } \\ \hline
 		\end{tabular} \end{center}
+		Notations:
+		\begin{itemize}
+			\item[reg\#*:] The register at ID * in the register file
+			\item[@*:] The original register (in the register file) that was put in *
+			\item[* $\dagger$ *:] Does what ever the ALU op says should be done to the 2 values
+			\item[Code\#:] Varies based on on the sudo code number is
+		\end{itemize}
 	\subsection{Tests}
 		\subsubsection{A-Type}
+			\begin{tabular}{ r  r  p{12cm} }
+					No Immediate:   & 1. & Get this instruction\\
+					                & 2. & Increase PC by 2 for the next instruction\\
+					                & 3. & R0 and R1 should be loaded with the values from the first and second register in the instruction\\
+					                & 4. & The ALUout should have the value of the two values combined using the function code that was passed in\\
+					                & 5. & That value should be in the first specified register for the instruction\\ 
+					                &    & \\
+					With Immediate: & 1. & Get this and the next instruction\\
+					                & 2. & Increase PC by 2 for the next instruction\\
+					                & 3. & R0 should be loaded with the value from the first register in the instruction and R1 should have the immediate which was in NextInst, PC should have been increased by 2 again\\
+					                & 4. & The ALUout should have the value of the two values combined using the function code that was passed in\\
+					                & 5. & That value should be in the first specified register for the instruction, the immediate should also have been stored in the second register from the instruction if it was given\\
+			\end{tabular}
 		\subsubsection{B-Type}
-			\begin{itemize}
-				\item[Branches:]
-				\item[Read:]
-				\item[Write:]
-			\end{itemize}
+			\begin{tabular}{ r  r  p{13cm} }
+					Branches: & 1. & Get this instruction\\
+					          & 2. & Increase PC by 2 for the next instruction\\
+					          & 3. & R0 and R1 should be loaded with the values from the first and second register in the instruction\\
+					          & 4. & The ALUout should have the new PC value for use if the branch is supposed to branch\\
+					          & 5. & ALUout should be transferred to PCtemp, the combination of R0 and R1 should be in ALUout\\
+					          & 6. & If ALUout is 0 PC should have been changed to what is in PCtemp\\
+					          &    & \\
+					Read:     & 1. & Get this instruction\\
+					          & 2. & Increase PC by 2 for the next instruction\\
+					          & 3. & R0 and R1 should be loaded with the values from the first and second register in the instruction, Hreg should have the offset from the instruction\\
+					          & 4. & The ALUout should have the value of what's in R1 added to the sign extended, shifted to the left by one value in Hreg\\
+					          & 5. & ALUout should be passed into main memory and the value at that address should be in MemRead\\
+					          & 6. & The first register specified in the instruction should have the value from memory\\
+					          &    & \\
+					Write:    & 1. & Get this instruction\\
+					          & 2. & Increase PC by 2 for the next instruction\\
+					          & 3. & R0 and R1 should be loaded with the values from the first and second register in the instruction, Hreg should have the offset from the instruction\\
+					          & 4. & The ALUout should have the value of what's in R1 added to the sign extended, shifted to the left by one value in Hreg\\
+					          & 5. & ALUout should be passed into memory as well as the value in R0, the value in R0 should be in memory at that address
+			\end{tabular}
 		\subsubsection{H-Type}
-			\begin{itemize}
-				\item[Schwap:]
-				\item[Sudo:]
-			\end{itemize}
+			\begin{tabular}{ r  r  p{12cm} }
+					Schwap: & 1. & Get this instruction\\
+					        & 2. & Increase PC by 2 for the next instruction\\
+					        & 3. & Hreg should get the schwap group number\\
+					        & 4. & SchLatch should now be set to the new schwap group number\\
+					        &    & \\
+					Sudo:   & 1. & Get this instruction\\
+					        & 2. & Increase PC by 2 for the next instruction\\
+					        & 3. & Hreg should get the sudo code number\\
+					        & 4. & The correct action should now be performed based on the code number\\
+			\end{tabular}
 		\subsubsection{J-Type}
 \section{Assembler and Coding Practices}
 	\subsection{Assembler}
