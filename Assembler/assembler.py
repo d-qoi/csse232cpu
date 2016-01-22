@@ -194,9 +194,9 @@ class Assembler:
 
     def symToOffset(self, sym, line):
         if self.debug:
-            print("creating offset from",line'to',self.symbolDef[sym],'for sym',sym)
+            print("creating offset from line",line,'to',self.symbolDef[sym],'for sym',sym)
             print('calculated as',self.symbolDef[sym] - line + self.symOff)
-       return self.symbolDef[sym] - line + self.symOff
+        return self.symbolDef[sym] - line + self.symOff
 
     #two byte mostly for jumps
     def toHexSigned(self, num):
@@ -224,16 +224,16 @@ class Assembler:
             if not isinstance(self.program[self.programCounter], list):
                 continue
             # Branching l0gic
-            if self.program[self.programCounter][0] in ['beq','bne','bgt','blt'] and
-                self.program[self.programCounter][3] in self.symbolDef:
+            if (self.program[self.programCounter][0] in ['beq','bne','bgt','blt'] and
+                self.program[self.programCounter][3] in self.symbolDef):
                 offset = self.symToOffset(self.program[self.programCounter][3], self.programCounter)
                 if offset > 15 or offset < 0:
                     self.branchToJump(self.programCounter)
                 else:
                     self.program[self.programCounter][3] = self.toHexUnsigned(offset)
             # Jumping logic
-            elif self.program[self.programCounter][0] in ['jr'] and
-                self.program[self.programCounter][2] in self.symbolDef:
+            elif (self.program[self.programCounter][0] in ['jr'] and
+                  self.program[self.programCounter][2] in self.symbolDef):
                 offset = self.symToOffset(self.program[self.programCounter][2], self.programCounter)
                 if offset > 127 or offset < -128: #2^8 signed is 127 to -128
                     self.jumpToBigJump(self.programCounter)
