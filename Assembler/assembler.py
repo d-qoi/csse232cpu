@@ -5,7 +5,7 @@ class Assembler:
     debug = False
     progStart = 0
     programCounter = 0
-    symOff = 1 #I am not sure how much to offset the symbols, this will be the thing to change
+    symOff = -1 #I am not sure how much to offset the symbols, this will be the thing to change
     program = []
     globalDef = {}
     symbolDef = {}
