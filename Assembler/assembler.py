@@ -195,7 +195,7 @@ class Assembler:
     def symToOffset(self, sym, line):
         if self.debug:
             print("creating offset from line",line,'to',self.symbolDef[sym],'for sym',sym)
-            print('calculated as',self.symbolDef[sym] - line + self.symOff)
+            print('calculated as',self.symbolDef[sym] - line + self.symOff,'for', self.program[line])
         return self.symbolDef[sym] - line + self.symOff
 
     #two byte mostly for jumps
@@ -422,6 +422,9 @@ Please be careful with this.
         self.readFile(inPath)
         self.expandPseudo()
         self.expandSymbols()
+        if self.debug:
+            for line in self.program:
+                print(line)
         self.assemble()
         self.printAsm(outPath)
 
