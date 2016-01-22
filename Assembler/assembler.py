@@ -177,7 +177,72 @@ class Assembler:
         if self.debug:
             print(temp,"became:\n",self.program[i],'\n',self.program[i+1])
 
+    # For converting jumps that are too big to the correct form
+    def jumpToBigJump(self, i):
+        if self.debug:
+            temp = self.program[i]
+        sym = self.program[i][2]
+        offset = self.symbolDef[sym]
+        if self.debug:
+            print('jump to',sym,'being converted to big jump')
+        self.program.insert(i,['cpy','$a1',offset])
+        self.program[i+1] = ['jr','$a1',0]
+
+        if self.debug:
+            print(temp,"became:\n",self.program[i],'\n',self.program[i+1])
+
+
+    def symToOffset(self, sym, line):
+        if self.debug:
+            print("creating offset from",line'to',self.symbolDef[sym],'for sym',sym)
+            print('calculated as',self.symbolDef[sym] - line + self.symOff)
+       return self.symbolDef[sym] - line + self.symOff
+
+    #two byte mostly for jumps
+    def toHexSigned(self, num):
+        out = hex(num & 0xFF)[2:]
+        if len(out) == 1:
+            out = '0' + out
+
+        if self.debug:
+            print('converted',num,'to',hex(num & 0xFF)[2:])
+
+        return out
+
+    # one byte, mostly for branches
+    def toHexUnsigned(self, num):
+        if self.debug:
+            print('converted',num,'to',hex(num)[2:])
+        return hex(num)[2:]
+
     def expandSymbols(self):
+        offset = 0
+        if self.debug:
+            print(self.symbolDef)
+        self.programCounter = 0
+        while self.programCounter < len(self.program):
+            if not isinstance(self.program[self.programCounter], list):
+                continue
+            # Branching l0gic
+            if self.program[self.programCounter][0] in ['beq','bne','bgt','blt'] and
+                self.program[self.programCounter][3] in self.symbolDef:
+                offset = self.symToOffset(self.program[self.programCounter][3], self.programCounter)
+                if offset > 15 or offset < 0:
+                    self.branchToJump(self.programCounter)
+                else:
+                    self.program[self.programCounter][3] = self.toHexUnsigned(offset)
+            # Jumping logic
+            elif self.program[self.programCounter][0] in ['jr'] and
+                self.program[self.programCounter][2] in self.symbolDef:
+                offset = self.symToOffset(self.program[self.programCounter][2], self.programCounter)
+                if offset > 127 or offset < -128: #2^8 signed is 127 to -128
+                    self.jumpToBigJump(self.programCounter)
+                else:
+                    self.program[self.programCounter][2] = self.toHexSigned(offset)
+
+            self.programCounter += 1 #NOT MISSING THIS AGAIN
+
+    def expandSymbolsold(self):
         if self.debug:
             print(self.symbolDef)
         i = 0
@@ -212,8 +277,8 @@ class Assembler:
             i += 1 #because I can't use the for loop and expand the list
 
 
-    def pseudoExpandHelper(self, inst): #Hacky bullshit to make surethat I change this later
-    #I am probably not going to fix this
+    def pseudoExpandHelper(self, inst): #less Hacky bullshit
+    #I can make this work maybe
         if self.debug:
             print(inst,'=>')
         if 'j' in inst:
