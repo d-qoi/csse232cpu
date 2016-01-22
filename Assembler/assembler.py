@@ -125,7 +125,7 @@ class Assembler:
 
     # for updating things after expanding with pseudo instructions
     def updateSymbols(self, line, offset):
-        for sym,val in self.symbolDef:
+        for sym, val in self.symbolDef.items():
             if val >= line:
                 self.symbolDef[sym] += offset
 
@@ -157,19 +157,21 @@ class Assembler:
         #self.program[i][3] = hex((self.symbolDef[self.program[i][3]] - i + 2) & 0xF)[2:] + " Needs to be changed, BTJD"
         if self.debug:
             temp = self.program[i]
-        updateSymbols(i,1)
+            
+        self.updateSymbols(i,1)
         sym = self.program[i][3]
         # jr $pc :sym
-        jump = [self.binaryMapInst['jr'],self.binaryMapRegs['$pc'],sym]
+        jump = ['jr','$pc',sym]
         self.program[i][3] = 1;
-        if self.program[i][0] is self.binaryMapInst['beq']:
-            self.program[i][0] = self.binaryMapInst['bne']
-        elif self.program[i][0] is self.binaryMapInst['bne']:
-            self.program[i][0] = self.binaryMapInst['beq']
-        elif self.program[i][0] is self.binaryMapInst['bgt']:
-            self.program[i][0] = self.binaryMapInst['blt']
-        elif self.program[i][0] is self.binaryMapInst['blt']:
-            self.program[i][0] = self.binaryMapInst['bgt']
+        print(self.program[i][0])
+        if self.program[i][0] == 'beq':
+            self.program[i][0] = 'bne'
+        elif self.program[i][0] == 'bne':
+            self.program[i][0] = 'beq'
+        elif self.program[i][0] == 'bgt':
+            self.program[i][0] = 'blt'
+        elif self.program[i][0] == 'blt':
+            self.program[i][0] = 'bgt'
         self.program.insert(i+1,jump)
 
         if self.debug:
@@ -184,14 +186,11 @@ class Assembler:
                 temp = self.program[i]
             if len(self.program[i]) is 4: # to make sure that constants don't crash this
                 if self.program[i][3] in self.symbolDef: # to make sure that it is a correct symbol
-                    if self.program[i][0] in [self.binaryMapInst['beq'],
-                                            self.binaryMapInst['bne'],
-                                            self.binaryMapInst['bgt'],
-                                            self.binaryMapInst['blt']]: # This is all of the branching instructions
+                    if self.program[i][0] in ['beq','bne','bgt','blt']: # This is all of the branching instructions
                         if (self.symbolDef[self.program[i][3]] - i + self.symOff) > 15:
-                            branchToJump(i)
+                            self.branchToJump(i)
                         elif (self.symbolDef[self.program[i][3]] - i + self.symOff) < 0:
-                            branchToJump(i)
+                            self.branchToJump(i)
                         else:
                             if self.debug:
                                 print(self.program[i], hex((self.symbolDef[self.program[i][3]] - i + self.symOff) & 0xF))
@@ -201,7 +200,7 @@ class Assembler:
                     else:
                         raise Exception("Unknown use of Synmbols: " + str(self.program[i]))
             elif len(self.program[i]) is 3: #to make sure that it can handel jumps
-                if self.program[i][0] in [self.binaryMapInst['jr']]:
+                if self.program[i][0] in ['jr']:
                     if self.program[i][2] in self.symbolDef:
                         if self.debug:
                             print(self.program[i], hex((self.symbolDef[self.program[i][2]] - i + self.symOff) & 0xFF))
@@ -222,7 +221,7 @@ class Assembler:
         elif 'jal' in inst:
             out = [['cpy','$ra',4],
                 ['add','$ra','$pc'],
-                ['jr''$pc',inst[1]]
+                ['jr''$pc',inst[1]]]
 
         self.program.pop(self.programCounter)
         out.reverse()
@@ -237,7 +236,9 @@ class Assembler:
         self.programCounter = 0;
         while self.programCounter < len(self.program):
             if self.program[self.programCounter][0] in self.PseudoList:
-                pseudoExpandHelper(self.program[self.programCounter])
+                self.pseudoExpandHelper(self.program[self.programCounter])
+
+            self.programCounter += 1
 
 
     def printAsm(self, outFile):
@@ -331,7 +332,7 @@ Please be careful with this.
         out[0] = self.binaryMapInst[inst[0]]
         out[1] = self.binaryMapRegs[inst[1]]
         if len(inst) is 3:
-            out[2] = hex(int(inst[2]) & 0xFF)[2:]
+            out[2] = inst[2]
             if len(out[2]) is 1:
                 out[2] = '0' + out[2]
         else:
