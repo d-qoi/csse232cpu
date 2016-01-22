@@ -5,6 +5,7 @@
 \usepackage{multirow}
 \usepackage{makecell}
 \usepackage{listings}
+\usepackage{pdflscape}
 
 \title{Schwap CPU Design Documentation}
 \author{Charlie Fenoglio, Alexander Hirschfeld, Andrew McKee, and Wesley Van Pelt}
@@ -97,161 +98,66 @@
 				\end{tabular}
 			\end{center}
 	\subsection{Core Instructions}
-		Some instructions have alias names, see Section 6.3.2 for a list.
-		\subsubsection{Core Instructions Summary}
-		\begin{center} \begin{tabular}{| c | c | c | c | c | c |} \hline
-			\thead{OP \\ Code} & \thead{Function \\ Code} & Name & Type & Description \\ \hline
-			\multirow{15}{*}{\thead{0x0/1$^\dagger$}} & 0x0 & and & A & \thead{Bitwise ands 2 values}\\ \cline{2-5}
-			     & 0x1 & orr  & A & \thead{Bitwise ors 2 values}\\ \cline{2-5}
-			     & 0x2 & xor  & A & \thead{Bitwise xors 2 values}\\ \cline{2-5}
-			     & 0x3 & not  & A & \thead{Bitwise nots 2 values}\\ \cline{2-5}
-			     & 0x4 & tsc  & A & \thead{Converts a number to 2's compliment}\\ \cline{2-5}
-			     & 0x5 & slt  & A & \thead{Set less than}\\ \cline{2-5}
-			     & 0x6 & sll  & A & \thead{Left logical bit shift}\\ \cline{2-5}
-			     & 0x7 & srl  & A & \thead{Right logical bit shift}\\ \cline{2-5}
-			     & 0x8 & sra  & A & \thead{Right arithmetic bit shift}\\ \cline{2-5}
-			     & 0x9 & add  & A & \thead{Adds 2 values}\\ \cline{2-5}
-			     & 0xA & sub  & A & \thead{Subtracts 2 values}\\ \cline{2-5}
-			     & 0xF & cpy  & A & \thead{Copies the value in one register to another}\\ \hline
-			 0x2 & -   & beq  & B & \thead{Branches if the 2 values are equal}\\ \hline
-			 0x3 & -   & bne  & B & \thead{Branches if the 2 values are not equal}\\ \hline
-			 0x4 & -   & bgt  & B & \thead{Branches if value0 $>$ value1}\\ \hline
-			 0x5 & -   & blt  & B & \thead{Branches if value0 $<$ value1}\\ \hline
-			 0x6 & -   & jr   & J & \thead{Jumps to the value}\\ \hline
-			 0x7 & -   & r    & B & \thead{Reads the value in memory into a register}\\ \hline
-			 0x8 & -   & w    & B & \thead{Writes the value in a register into memory}\\ \hline
-			 0xE & -   & rsh  & H & \thead{Changes the schwap group}\\ \hline
-			 0xF & -   & sudo & H & \thead{Sames as "syscall" in MIPS} \\ \hline
-		\end{tabular} \\
-		\thead{$^\dagger$0x0 is used for instructions which do not use an immediate, 0x1 is used if the instruction does use an immediate}
-		 \end{center}
-		\subsubsection{Core Instructions and Details}
-			\begin{itemize}
-				\item[and:] A standard bitwise "and", it can use any of the syntaxes listed below.\\
-					\begin{tabular}{| l | c | c |} \hline
-						Syntax & Meaning & Description \\ \hline
-						and [dest] [src]             & \thead{dest $=$ dest $\&$ src} & \thead{Bitwise ands the values in registers [dest] and [src]}\\ \hline
-						and [dest] [src] [immediate] & \thead{src $=$ immediate \\ dest $=$ dest $\&$ src} & \thead{Loads the immediate into the register [src] and then \\ bitwise ands the values in registers [dest] and [src]}\\ \hline
-						and [dest] [immediate]       & \thead{dest $=$ dest $\&$ immediate} & \thead{Bitwise ands the immediate and the value in \\ the register [dest]}\\ \hline
-					\end{tabular}
-				\item[orr:] A standard bitwise "or", it can use any of the syntaxes listed below.\\
-					\begin{tabular}{| l | c | c |} \hline
-						Syntax & Meaning & Description \\ \hline
-						orr [dest] [src]             & \thead{dest $=$ dest $|$ src} & \thead{Bitwise ors the values in registers [dest] and [src]}\\ \hline
-						orr [dest] [src] [immediate] & \thead{src $=$ immediate \\ dest $=$ dest $|$ src} & \thead{Loads the immediate into the register [src] and then \\ bitwise ors the values in registers [dest] and [src]}\\ \hline
-						orr [dest] [immediate]       & \thead{dest $=$ dest $|$ immediate} & \thead{Bitwise ors the immediate and the value in \\ the register [dest]}\\ \hline
-					\end{tabular}
-				\item[xor:] A standard bitwise "xor", it can use any of the syntaxes listed below.\\
-					\begin{tabular}{| l | c | c |} \hline
-						Syntax & Meaning & Description \\ \hline
-						xor [dest] [src]             & \thead{dest $=$ dest $\string^$ src} & \thead{Bitwise xors the values in registers [dest] and [src]}\\ \hline
-						xor [dest] [src] [immediate] & \thead{src $=$ immediate \\ dest $=$ dest $\string^$ src} & \thead{Loads the immediate into the register [src] and then \\ bitwise xors the values in registers [dest] and [src]}\\ \hline
-						xor [dest] [immediate]       & \thead{dest $=$ dest $\string^$ immediate} & \thead{Bitwise xors the immediate and the value in \\ the register [dest]}\\ \hline
-					\end{tabular}
-				\item[not:] A standard bitwise "not", it can use any of the syntaxes listed below.\\
-					\begin{tabular}{| l | c | c |} \hline
-						Syntax & Meaning & Description \\ \hline
-						not [dest]                   & \thead{dest $=$ $\sim$dest} & \thead{Bitwise nots the value in the register [dest]}\\ \hline
-						not [dest] [src] [immediate] & \thead{src $=$ immediate \\ dest $=$ $\sim$src} & \thead{Loads the immediate into the register [src] and then \\ bitwise nots the value in register [src] into [dest]}\\ \hline
-						not [dest] [immediate]       & \thead{dest $=$ $\sim$immediate} & \thead{Bitwise nots the immediate into the register [dest]}\\ \hline
-					\end{tabular}
-				\item[tsc:] Converts an integer to/from 2's compliment, it can use any of the syntaxes listed below.\\
-					\begin{tabular}{| l | c | c |} \hline
-						Syntax & Meaning & Description \\ \hline
-						tsc [dest]                   & \thead{dest $=$ $\sim$dest + 1} & \thead{Converts the value in the register [dest] to 2's compliment}\\ \hline
-						tsc [dest] [src] [immediate] & \thead{src $=$ immediate \\ dest $=$ $\sim$src + 1} & \thead{Loads the immediate into the register [src] and then \\ converts the value in register [src] to 2's compliment and \\ stores into [dest]}\\ \hline
-						tsc [dest] [immediate]       & \thead{dest $=$ $\sim$immediate + 1} & \thead{Converts the immediate to 2's compliment and stores \\ into the register [dest]}\\ \hline
-					\end{tabular}
-				\item[slt:] A standard ALU set less than, it can use any of the syntaxes listed below.\\
-					\begin{tabular}{| l | c | c |} \hline
-						Syntax & Meaning & Description \\ \hline
-						slt [dest] [src]             & \thead{dest $=$ (dest $<$ src) ? 1 : 0} & \thead{If [dest] $<$ [src], then [dest] gets set to 1 \\ If [dest] $\geq$ [src], then [dest] gets set to 0}\\ \hline
-						slt [dest] [src] [immediate] & \thead{src $=$ immediate \\ dest $=$ (dest $<$ src) ? 1 : 0} & \thead{Loads the immediate into the register [src] then \\ If [dest] $<$ [src], then [dest] gets set to 1 \\ If [dest] $\geq$ [src], then [dest] gets set to 0}\\ \hline
-						slt [dest] [immediate]       & \thead{dest $=$ (dest $<$ immediate) ? 1 : 0} & \thead{If [dest] $<$ [immediate], then [dest] gets set to 1 \\ If [dest] $\geq$ [immediate], then [dest] gets set to 0}\\ \hline
-					\end{tabular}
-				\item[sll:] A standard shift left logical, it can use any of the syntaxes listed below.\\
-					\begin{tabular}{| l | c | c |} \hline
-						Syntax & Meaning & Description \\ \hline
-						sll [dest] [shift]             & \thead{dest $=$ dest $<<$ shift} & \thead{Shifts the value in the register [dest] left \\ logically by [shift]}\\ \hline
-						sll [dest] [shift] [immediate] & \thead{shift $=$ immediate \\ dest $<<$ shift} & \thead{Loads the immediate into the register [src] \\ and then shifts the value in the register [dest] \\ left logically by [shift]}\\ \hline
-						sll [dest] [immediate]         & \thead{dest $=$ dest $<<$ immediate} & \thead{Shifts the value in the register [dest] \\ logically by [immediate]}\\ \hline
-					\end{tabular}
-				\item[srl:] A standard shift right logical, it can use any of the syntaxes listed below.\\
-					\begin{tabular}{| l | c | c |} \hline
-						Syntax & Meaning & Description \\ \hline
-						srl [dest] [shift]             & \thead{dest $=$ dest $>>$ shift} & \thead{Shifts the value in the register [dest] right \\ logically by [shift]}\\ \hline
-						srl [dest] [shift] [immediate] & \thead{shift $=$ immediate \\ dest $>>$ shift} & \thead{Loads the immediate into the register [src] \\ and then shifts the value in the register [dest] \\ right logically by [shift]}\\ \hline
-						srl [dest] [immediate]         & \thead{dest $=$ dest $>>$ immediate} & \thead{Shifts the value in the register [dest] \\ right logically by [immediate]}\\ \hline
-					\end{tabular}
-				\item[sra:] A standard shift right arithmetic, it can use any of the syntaxes listed below.\\
-					\begin{tabular}{| l | c | c |} \hline
-						Syntax & Meaning & Description \\ \hline
-						srl [dest] [shift]             & \thead{dest $=$ dest $>>>$ shift} & \thead{Shifts the value in the register [dest] right \\ arithmetically by [shift]}\\ \hline
-						srl [dest] [shift] [immediate] & \thead{shift $=$ immediate \\ dest $>>>$ shift} & \thead{Loads the immediate into the register [src] \\ and then shifts the value in the register [dest] \\ right arithmetically by [shift]}\\ \hline
-						srl [dest] [immediate]         & \thead{dest $=$ dest $>>>$ immediate} & \thead{Shifts the value in the register [dest] \\ right arithmetically by [immediate]}\\ \hline
-					\end{tabular}
-				\item[add:] A standard ALU add, it can use any of the syntaxes listed below.\\
-					\begin{tabular}{| l | c | c |} \hline
-						Syntax & Meaning & Description \\ \hline
-						add [dest] [src]             & \thead{dest $=$ dest + src} & \thead{Adds the values in registers [dest] and [src]}\\ \hline
-						add [dest] [src] [immediate] & \thead{src $=$ immediate \\ dest $=$ dest + src} & \thead{Loads the immediate into the register [src] and then \\ adds the values in registers [dest] and [src]}\\ \hline
-						add [dest] [immediate]       & \thead{dest $=$ dest + immediate} & \thead{Adds the immediate and the value in \\ the register [dest]}\\ \hline
-					\end{tabular}
-				\item[sub:] A standard ALU subtract, it can use any of the syntaxes listed below.\\
-					\begin{tabular}{| l | c | c |} \hline
-						Syntax & Meaning & Description \\ \hline
-						sub [dest] [src]             & \thead{dest $=$ dest $-$ src} & \thead{Subtracts the values in registers [dest] and [src]}\\ \hline
-						sub [dest] [src] [immediate] & \thead{src $=$ immediate \\ dest $=$ dest $-$ src} & \thead{Loads the immediate into the register [src] and then \\ subtracts the values in registers [dest] and [src]}\\ \hline
-						sub [dest] [immediate]       & \thead{dest $=$ dest $-$ immediate} & \thead{Subtracts the immediate and the value in \\ the register [dest]}\\ \hline
-					\end{tabular}
-				\item[cpy:] Copies the value from one register to another, or loads an immediate.  It can use any of the syntaxes listed below.\\
-					\begin{tabular}{| l | c | c |} \hline
-						Syntax & Meaning & Description \\ \hline
-						cpy [dest] [src]             & \thead{dest $=$ src} & \thead{Copies the value the in register [src] into [dest]}\\ \hline
-						cpy [dest] [immediate]       & \thead{dest $=$ immediate} & \thead{Loads the immediate into the register [dest]}\\ \hline
-					\end{tabular}
-				\item[beq:] Branches if the 2 values are equal. PC relative, if branching up or down more than 16 instructions, this will be a pseudo instruction.  It uses the syntax listed below.\\
-					\begin{tabular}{| l | c | c |} \hline
-						Syntax & Meaning & Description \\ \hline
-						beq [src0] [src1] label      & \thead{if(src0 == src1) goto label} & \thead{If the values in the registers [src0] and [src1] \\ are equal, branch to label}\\ \hline
-					\end{tabular}
-				\item[bne:] Branches if the 2 values are not equal. PC relative, if branching up or down more than 16 instructions, this will be a pseudo instruction.  It uses the syntax listed below.\\
-					\begin{tabular}{| l | c | c |} \hline
-						Syntax & Meaning & Description \\ \hline
-						bne [src0] [src1] label      & \thead{if(src0 != src1) goto label} & \thead{If the values in the registers [src0] and [src1] \\ are not equal, branch to label}\\ \hline
-					\end{tabular}
-				\item[bgt:] Branches if the value0 $>$ value1. PC relative, if branching up or down more than 16 instructions, this will be a pseudo instruction.  It uses the syntax listed below.\\
-					\begin{tabular}{| l | c | c |} \hline
-						Syntax & Meaning & Description \\ \hline
-						bgt [src0] [src1] label      & \thead{if(src0 $>$ src1) goto label} & \thead{If [src0] $>$ [src1], branch to label}\\ \hline
-					\end{tabular}
-				\item[blt:] Branches if the value0 $<$ value1. PC relative, if branching up or down more than 16 instructions, this will be a pseudo instruction.  It uses the syntax listed below.\\
-					\begin{tabular}{| l | c | c |} \hline
-						Syntax & Meaning & Description \\ \hline
-						blt [src0] [src1] label      & \thead{if(src0 $<$ src1) goto label} & \thead{If [src0] $<$ [src1], branch to label}\\ \hline
-					\end{tabular}
-				\item[jr:] Jumps to an instruction, the offset is signed.  It can use any of the syntaxes listed below.\\
-					\begin{tabular}{| l | c | c |} \hline
-						Syntax & Meaning & Description \\ \hline
-						jr [offset]([dest]) & \thead{pc $=$ dest + offset} & \thead{Jumps to the instruction at the address in [dest] + [offset]}\\ \hline
-					\end{tabular}
-				\item[r:] Reads a value in memory, it uses the syntax listed below.\\
-					\begin{tabular}{| l | c | c |} \hline
-						Syntax & Meaning & Description \\ \hline
-						r [dest] [offset]([src])     & \thead{dest $=$ Mem[src + offset]} & \thead{Reads the data in the address of [src] + [offset] \\ in memory into [dest]}\\ \hline
-					\end{tabular}
-				\item[w:] Writes a value in memory, it uses the syntax listed below.\\
-					\begin{tabular}{| l | c | c |} \hline
-						Syntax & Meaning & Description \\ \hline
-						w [offset]([dest]) [src]     & \thead{Mem[dest + offset] $=$ src} & \thead{Writes the data in the address of [dest] + [offset] \\ in memory from [src]}\\ \hline
-					\end{tabular}
-				\item[rsh:] Sets the schwap group, it uses the syntax listed below.\\
-					\begin{tabular}{| l | c | c |} \hline
-						Syntax & Meaning & Description \\ \hline
-						rsh [group]     & \thead{SchwapGroup $=$ group} & \thead{Changes the schwap group number to [group], \\ these numbers can be found in the table in 1.2.1}\\ \hline
-					\end{tabular}
-				\item[sudo:] Does what "syscall" in MIPS does, just type "sudo" for the instruction.
-			\end{itemize}
+		Some instructions have alias names, see Section 6.3.2 for a list. [dest], [src], [src0], [src1] all refer to a register in the register file, for example \$t0.  "NAM" stands for the name of the instruction (for example, "and").  "OP" stands for whatever the op would be (for example, "\&").
+		\subsubsection{A-Type}
+			\begin{center} \begin{tabular}{| c | c | c |} \hline
+				\thead{Function \\ Code} & Name & Description \\ \hline
+				0x0 & and & \thead{Bitwise ands 2 values}\\ \hline
+			    0x1 & orr & \thead{Bitwise ors 2 values}\\ \hline
+			    0x2 & xor & \thead{Bitwise xors 2 values}\\ \hline
+			    0x3 & not & \thead{Bitwise nots 2 values}\\ \hline
+			    0x4 & tsc & \thead{Converts a number to 2's compliment}\\ \hline
+			    0x5 & slt & \thead{Set less than}\\ \hline
+			    0x6 & sll & \thead{Left logical bit shift}\\ \hline
+			    0x7 & srl & \thead{Right logical bit shift}\\ \hline
+			    0x8 & sra & \thead{Right arithmetic bit shift}\\ \hline
+			    0x9 & add & \thead{Adds 2 values}\\ \hline
+			    0xA & sub & \thead{Subtracts 2 values}\\ \hline
+			    0xF & cpy & \thead{Copies the value in one register to another}\\ \hline
+			\end{tabular} \end{center}
+			All A-Type instructions, except for tsc, slt, and cpy, follow the syntax in the first section of the table below.  Those three can be found in the next sections.
+			\begin{center} \begin{tabular}{| c | l | c | c |} \hline
+				\thead{OP\\Code}     & Syntax                       & Meaning & Description \\ \hline
+				0x0                  & NAM [dest] [src]             & \thead{dest $=$ dest OP src} & \thead{OPs the values in registers [dest] and [src]}\\ \hline
+				\multirow{3}{*}{0x1} & NAM [dest] [src] [immediate] & \thead{src $=$ immediate \\ dest $=$ dest OP src} & \thead{Loads the immediate into the register [src] and \\ then OPs the values in registers [dest] and [src]}\\ \cline{2-4}
+				                     & NAM [dest] [immediate]       & \thead{dest $=$ dest OP immediate} & \thead{OPs the immediate and the value in the \\ register [dest]}\\ \hline \hline
+				0x0                  & tsc [dest]                   & \thead{dest $=$ $\sim$dest + 1} & \thead{Converts the value in the register [dest]\\to 2's compliment}\\ \hline
+				\multirow{3}{*}{0x1} & tsc [dest] [src] [immediate] & \thead{src $=$ immediate \\ dest $=$ $\sim$src + 1} & \thead{Loads the immediate into the register [src] \\ and then converts the value in register [src] \\ to 2's compliment and stores into [dest]}\\ \cline{2-4}
+						             & tsc [dest] [immediate]       & \thead{dest $=$ $\sim$immediate + 1} & \thead{Converts the immediate to 2's compliment \\ and stores into the register [dest]}\\ \hline \hline
+				0x0                  & slt [dest] [src]             & \thead{dest $=$ (dest $<$ src) ? 1 : 0} & \thead{If [dest] $<$ [src], then [dest] gets set to 1 \\ If [dest] $\geq$ [src], then [dest] gets set to 0}\\ \hline
+				\multirow{3}{*}{0x1} & slt [dest] [src] [immediate] & \thead{src $=$ immediate \\ dest $=$ (dest $<$ src) ? 1 : 0} & \thead{Loads the immediate into the register [src] then \\ If [dest] $<$ [src], then [dest] gets set to 1 \\ If [dest] $\geq$ [src], then [dest] gets set to 0}\\ \cline{2-4}
+						             & slt [dest] [immediate]       & \thead{dest $=$ \\ (dest $<$ immediate) ? 1 : 0} & \thead{If [dest] $<$ [immediate], then [dest] gets set to 1 \\ If [dest] $\geq$ [immediate], then [dest] gets set to 0}\\ \hline \hline
+				0x0                  & cpy [dest] [src]             & \thead{dest $=$ src} & \thead{Copies the value the in register [src] into [dest]}\\ \hline
+				0x1                  & cpy [dest] [immediate]       & \thead{dest $=$ immediate} & \thead{Loads the immediate into the register [dest]}\\ \hline
+			\end{tabular} \end{center}
+		\subsubsection{B-Type}
+			\begin{center} \begin{tabular}{| c | c | c |} \hline
+				\thead{OP \\ Code} & Name & Description \\ \hline
+				 0x2 & beq  & \thead{Branches if the 2 values are equal}\\ \hline
+				 0x3 & bne  & \thead{Branches if the 2 values are not equal}\\ \hline
+				 0x4 & bgt  & \thead{Branches if value0 $>$ value1}\\ \hline
+				 0x5 & blt  & \thead{Branches if value0 $<$ value1}\\ \hline
+				 0x7 & r    & \thead{Reads the value in memory into a register}\\ \hline
+				 0x8 & w    & \thead{Writes the value in a register into memory}\\ \hline
+			\end{tabular} \end{center}
+			The four different types of branches all follow the same syntax, "bnh" represents any branch name and "***" represents the condition.  They will become pseudo instructions iff branching up, or down more than 16 instructions.  Read and write each have their own syntaxes.  [offset] is not a register, it is an immediate.
+			\begin{center} \begin{tabular}{| l | c | c |} \hline
+				Syntax & Meaning & Description \\ \hline
+				bnh [src0] [src1] label  & \thead{if(src0 *** src1) goto label} & \thead{If [src0] *** [src1], branch to label}\\ \hline
+				r [dest] [offset]([src]) & \thead{dest $=$ Mem[src + offset$<<$1]} & \thead{Reads the data in the address of [src] + [offset] \\ in memory into [dest]}\\ \hline
+				w [offset]([dest]) [src] & \thead{Mem[dest + offset<<1] $=$ src} & \thead{Writes the data in the address of [dest] + [offset] \\ in memory from [src]}\\ \hline
+			\end{tabular} \end{center}
+		\subsubsection{H-Type}
+			\begin{center} \begin{tabular}{| c | c | l | c |} \hline
+				\thead{OP \\ Code} & Name & Syntax & Description \\ \hline
+				 0xE & rsh  & rsh [group] & \thead{Changes the schwap group number to [group], \\ these numbers can be found in the table in 1.2.1}\\ \hline
+				 0xF & sudo & sudo [code] & \thead{Sames as syscall in MIPS} \\ \hline
+			\end{tabular} \end{center}
+		\subsubsection{J-Type}
+			\begin{center} \begin{tabular}{| c | c | l | c | c |} \hline
+				\thead{OP \\ Code} & Name & Syntax & Meaning & Description \\ \hline
+				 0x6 & jr & jr [offset]([dest]) & \thead{pc $=$ dest + offset$<<$1} & \thead{Jumps to the instruction at the address in [dest] + [offset]}\\ \hline
+			\end{tabular} \end{center}
 	\subsection{Pseudo Instructions}
 		There are two types of pseudo instructions.  One are instructions which are always pseudo instructions, the other are sometimes pseudo depending on the conditions.  Some instructions have alias names, see Section 6.3.2 for a list.
 		\subsubsection{Always Pseudo Instructions}
@@ -300,16 +206,6 @@
 			\begin{center} \begin{tabular}{| l | c |} \hline 
 				\multicolumn{2}{|c|}{Used as:} \\ \hline 
 				Hreg & \thead{Stores IR[3:0]} \\ \hline
-			\end{tabular} \end{center}
-		\subsubsection{4-bit Latch}
-			\begin{center} \begin{tabular}{| l | l | c |} \hline 
-				I/O & Name & Size \\ \hline 
-				In  & in   & 4 \\ \hline
-				Out & out  & 4 \\ \hline
-				Control & writable & 1 \\ \hline
-			\end{tabular} \end{center}
-			\begin{center} \begin{tabular}{| l | c |} \hline 
-				\multicolumn{2}{|c|}{Used as:} \\ \hline 
 				SchLatch & \thead{Stores schwap group number} \\ \hline
 			\end{tabular} \end{center}
 		\subsubsection{SE}
@@ -319,42 +215,54 @@
 				In  & in   & * \\ \hline
 				Out & out  & * \\ \hline
 			\end{tabular} \end{center}
-		\subsubsection{Main Memory}
+		\subsubsection{16-bit Adder}
 			\begin{center} \begin{tabular}{| l | l | c | l |} \hline 
-				I/O & Name      & Size & Description \\ \hline 
-				In  & MemAddr   & 16   & Address for data\\ \hline
-				In  & WriteData & 16   & Data to be written (at MemAddr) \\ \hline
-				Out & MemData0  & 16   & Data at MemAddr \\ \hline
-				Out & MemData1  & 16   & Data at MemAddr + 2 \\ \hline
+				I/O & Name     & Size & Description \\ \hline 
+				In  & A        & 16   & First input \\ \hline
+				In  & B        & 16   & Second input \\ \hline
+				Out & R        & 16   & Result \\ \hline
+			\end{tabular} \end{center}
+		\subsubsection{ALU}
+			\begin{center} \begin{tabular}{| l | l | c | l |} \hline 
+				I/O & Name     & Size & Description \\ \hline 
+				In  & A        & 16   & First input \\ \hline
+				In  & B        & 16   & Second input \\ \hline
+				Out & R        & 16   & Result \\ \hline
+				Out & zero     & 1    & If result is 0 \\ \hline
+				Out & overflow & 1    & If there is overflow \\ \hline
+				Control & op   & 4    & Operation code \\ \hline
 			\end{tabular} \end{center}
 		\subsubsection{Register File}
 			\begin{center} \begin{tabular}{| l | l | c | l |} \hline 
-				I/O & Name      & Size & Description \\ \hline 
-				In  & regID0    & 4    & ID for first register \\ \hline
-				In  & regID1    & 4    & ID for second register \\ \hline
-				In  & writable  & 2    & If data can be written to regID1/0\\ \hline
+				I/O & Name       & Size & Description \\ \hline 
+				In  & regID0     & 4    & ID for first register \\ \hline
+				In  & regID1     & 4    & ID for second register \\ \hline
 				In  & writeData0 & 16   & Data to write to regID0 \\ \hline
 				In  & writeData1 & 16   & Data to write to regID1 \\ \hline
-				Out & reg0      & 16   & Data from regID0 \\ \hline
-				Out & reg1      & 16   & Data from regID1 \\ \hline
+				Out & reg0       & 16   & Data from regID0 \\ \hline
+				Out & reg1       & 16   & Data from regID1 \\ \hline
+				Control & writable   & 2    & If data can be written to regID1/0\\ \hline
 			\end{tabular} \end{center}
+		\subsubsection{Main Memory}
+			\begin{center} \begin{tabular}{| l | l | c | l |} \hline 
+				I/O & Name      & Size & Description \\ \hline 
+				In  & MemAddr0  & 16   & Address for data\\ \hline
+				In  & MemAddr1  & 16   & Address for data\\ \hline
+				Out & MemData0  & 16   & Data at MemAddr0 \\ \hline
+				Out & MemData1  & 16   & Data at MemAddr1 \\ \hline
+				Control & WriteData & 16   & Data to be written (at MemAddr0) \\ \hline
+			\end{tabular} \end{center}
+	\newpage \begin{landscape}
 	\subsection{Summary Chart}
 		\begin{center} \begin{tabular}{| c | c | c | c | c | c | c | c |} \hline
 			\multirow{2}{*}{Step} & \multirow{2}{*}{A-Type} & \multicolumn{3}{c|}{B-Type} & \multicolumn{2}{c|}{H-Type} & \multirow{2}{*}{J-Type} \\ \cline{3-7}
 			& & Branches & Read & Write & Schwap & Sudo & \\ \hline
 			\thead{Get \\ instruction} & \multicolumn{7}{c|}{\thead{IR = MEM[PC] \\ NextInst = MEM[PC+2] \\ PC += 2}} \\ \hline
-			\thead{Decode ins-\\truction and \\ get stuff from \\ registers} & \multicolumn{7}{c|}{\thead{R0 = reg\#IR[8:11] \\ R1 = (IR[3:0]==0x1) ? \{NextInst; PC += 2\} : reg\#IR[7:4] \\ ALUout = PC + SE(IR[15:12]) \\ Hreg = IR[3:0]}} \\ \hline
-			\thead{Do \\ computation} & \thead{ALUout \\= R0$\dagger$R1} & \thead{PCtemp=ALUout \\ ALUout=R0$\dagger$R1} & \multicolumn{2}{c|}{\thead{ALUout = \\ R1 + SE(Hreg$<<$1)}} & \thead{SchLatch\\= Hreg} & \thead{Change\\on\\Code\#} & \thead{PC = R0+\\SE(IR[7:0]$<<$1)} \\ \hline
-			\thead{Output} & \thead{@R0 = \\ALUout} & \thead{if(ALUout==0)\\PC = PCtemp} & \thead{MemRead = \\ MEM[ALUout]} & \thead{MEM[ALUout] \\= R0} & \multicolumn{3}{c|}{ } \\ \hline
-			\thead{Output 2} & \multicolumn{2}{c|}{ } & \thead{@R0 = \\ MemRead} & \multicolumn{4}{c|}{ } \\ \hline
-		\end{tabular} \end{center}
-		Notations:
-		\begin{itemize}
-			\item[reg\#*:] The register at ID * in the register file
-			\item[@*:] The original register (in the register file) that was put in *
-			\item[*$\dagger$*:] Does what ever the ALU op says should be done to the 2 values
-			\item[Code\#:] Varies based on on the sudo code number is
-		\end{itemize}
+			\thead{Decode ins-\\truction and \\ get stuff from \\ registers} & \multicolumn{7}{c|}{\thead{R0 = reg\#IR[8:11] \\ if(IR[3:0]==0x1) \{R1 = NextInst; PC += 2\} else \{R1 = reg\#IR[7:4]\} \\ ALUout = PC + SE(IR[15:12]) \\ Hreg = IR[3:0]}} \\ \hline
+			\thead{Do \\ computation} & \thead{ALUout = R0 aluop R1} & \thead{PCtemp = ALUout \\ if(R0 aluop R1 == 0) \\ PC = PCtemp} & \multicolumn{2}{c|}{\thead{ALUout = R1 + SE(Hreg$<<$1)}} & \thead{SchLatch\\= Hreg} & \thead{Change on\\Code\#} & \thead{PC = R0+\\SE(IR[7:0]$<<$1)} \\ \hline
+			\thead{Output} & \thead{R0 in reg. file = ALUout} & & \thead{MemRead = MEM[ALUout]} & \thead{MEM[ALUout] \\= R0} & \multicolumn{3}{c|}{ } \\ \hline
+			\thead{Output 2} & \multicolumn{2}{c|}{ } & \thead{R0 in reg. file = MemRead} & \multicolumn{4}{c|}{ } \\ \hline
+		\end{tabular} \end{center} \end{landscape}
 	\subsection{Tests}
 		\subsubsection{A-Type}
 			\begin{tabular}{ r  r  p{12cm} }
