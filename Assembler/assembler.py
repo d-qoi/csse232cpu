@@ -50,7 +50,7 @@ class Assembler:
                     '$h3':0xF}
 
 
-    ATypeList = {'add','adu','sub','sbu','sll','srl','sra','and','orr','or',
+    ATypeList = {'add','adu','sub','slt','sll','srl','sra','and','orr','or',
                 'xor','not','tsc','ldi','li','cpy'}
 
     BTypeList = {'beq','bnq','bne','bgt','blt','r','w'}
@@ -133,6 +133,8 @@ class Assembler:
     def assemble(self):
         self.programCounter = 0
         while self.programCounter < len(self.program):
+            if self.debug:
+                temp = "{0} =>".format(self.program[self.programCounter])
             if self.program[self.programCounter][0] in self.ATypeList:
                 self.AType(self.program[self.programCounter])
             elif self.program[self.programCounter][0] in self.BTypeList:
@@ -149,21 +151,24 @@ class Assembler:
 #                self.pseudoExpand(self.program[self.programCounter])
 #                if self.debug:
 #                    print(self.program[-3:],self.program[self.programCounter-1])
+            if self.debug:
+                print(temp,self.program[self.programCounter])
             self.programCounter += 1
+            
 
 
 
     def branchToJump(self, i):
         #self.program[i][3] = hex((self.symbolDef[self.program[i][3]] - i + 2) & 0xF)[2:] + " Needs to be changed, BTJD"
         if self.debug:
-            temp = self.program[i]
-            
+            temp = self.program[i] #debugging var to see what was going on.
+            print(temp,"became:")
         self.updateSymbols(i,1)
         sym = self.program[i][3]
         # jr $pc :sym
         jump = ['jr','$pc',sym]
         self.program[i][3] = 1;
-        print(self.program[i][0])
+        #print(self.program[i][0])
         if self.program[i][0] == 'beq':
             self.program[i][0] = 'bne'
         elif self.program[i][0] == 'bne':
@@ -175,7 +180,7 @@ class Assembler:
         self.program.insert(i+1,jump)
 
         if self.debug:
-            print(temp,"became:\n",self.program[i],'\n',self.program[i+1])
+            print(self.program[i],'\n',self.program[i+1])
 
     # For converting jumps that are too big to the correct form
     def jumpToBigJump(self, i):
@@ -284,9 +289,9 @@ class Assembler:
         if 'j' in inst:
             out = ['jr','$pc',inst[1]]
         elif 'jal' in inst:
-            out = [['cpy','$ra',4],
+            out = [['cpy','$ra','4'],
                 ['add','$ra','$pc'],
-                ['jr''$pc',inst[1]]]
+                ['jr','$pc',inst[1]]]
 
         self.program.pop(self.programCounter)
         out.reverse()
@@ -326,10 +331,7 @@ Please be careful with this.
                     continue
                 for inst in line:
                     if isinstance(inst, str):
-                        if inst.isdigit():
-                            dest.write(hex(int(inst))[2:])
-                        else:
-                            dest.write(inst)
+                        dest.write(inst)
                     else:
                         dest.write(hex(inst)[2:])
                 dest.write('\n')
@@ -350,7 +352,10 @@ Please be careful with this.
             out[2] = self.binaryMapRegs['$zz']
             out[3] = self.binaryMapInst[inst[0]]
             self.program[self.programCounter] = out
-            self.program.insert(self.programCounter + 1, inst[2])
+            if '0x' in inst[2]:
+                self.program.insert(self.programCounter + 1, inst[2][2:])
+            else:
+                self.program.insert(self.programCounter + 1, hex(int(inst[2]) & 0xFFFF))
             self.programCounter += 1 #because I am inserting the immediate, the PC needs to be increased
         else: # case for which we are loading an immediate into the second source on the same line
             out[1] = 0x1 
@@ -358,7 +363,10 @@ Please be careful with this.
             out[2] = self.binaryMapRegs[inst[2]]
             out[3] = self.binaryMapInst[inst[0]]
             self.program[self.programCounter] = out 
-            self.program.insert(self.programCounter + 1, inst[3])
+            if '0x' in inst[2]:
+                self.program.insert(self.programCounter + 1, inst[2][2:])
+            else:
+                self.program.insert(self.programCounter + 1, hex(int(inst[3]) & 0xFFFF))
             self.programCounter += 1 # because I am inserting the PC, the immeadiate needs to be increased
 
             #read 
@@ -422,9 +430,6 @@ Please be careful with this.
         self.readFile(inPath)
         self.expandPseudo()
         self.expandSymbols()
-        if self.debug:
-            for line in self.program:
-                print(line)
         self.assemble()
         self.printAsm(outPath)
 
