@@ -257,7 +257,10 @@ class Assembler:
                 temp = self.program[i]
             if len(self.program[i]) is 4: # to make sure that constants don't crash this
                 if self.program[i][3] in self.symbolDef: # to make sure that it is a correct symbol
-                    if self.program[i][0] in ['beq','bne','bgt','blt']: # This is all of the branching instructions
+                    if self.program[i][0] in [self.symbolDef['beq'],
+                                              self.symbolDef['bne'],
+                                              self.symbolDef['bgt'],
+                                              self.symbolDef['blt']]: # This is all of the branching instructions
                         if (self.symbolDef[self.program[i][3]] - i + self.symOff) > 15:
                             self.branchToJump(i)
                         elif (self.symbolDef[self.program[i][3]] - i + self.symOff) < 0:
@@ -271,7 +274,7 @@ class Assembler:
                     else:
                         raise Exception("Unknown use of Synmbols: " + str(self.program[i]))
             elif len(self.program[i]) is 3: #to make sure that it can handel jumps
-                if self.program[i][0] in ['jr']:
+                if self.program[i][0] in [self.symbolDef['jr']]:
                     if self.program[i][2] in self.symbolDef:
                         if self.debug:
                             print(self.program[i], hex((self.symbolDef[self.program[i][2]] - i + self.symOff) & 0xFF))
@@ -293,6 +296,7 @@ class Assembler:
             out = [['cpy','$ra','4'],
                 ['add','$ra','$pc'],
                 ['jr','$pc',inst[1]]]
+            self.updateSymbols(self.programCounter, 2)
 
         self.program.pop(self.programCounter)
         out.reverse()
@@ -358,6 +362,7 @@ Please be careful with this.
             else:
                 self.program.insert(self.programCounter + 1, hex(int(inst[2]) & 0xFFFF))
             self.programCounter += 1 #because I am inserting the immediate, the PC needs to be increased
+            self.updateSymbols(self.programCounter, 1)
         else: # case for which we are loading an immediate into the second source on the same line
             out[1] = 0x1 
             out[1] = self.binaryMapRegs[inst[1]]
@@ -369,6 +374,7 @@ Please be careful with this.
             else:
                 self.program.insert(self.programCounter + 1, hex(int(inst[3]) & 0xFFFF))
             self.programCounter += 1 # because I am inserting the PC, the immeadiate needs to be increased
+            self.updateSymbols(self.programCounter, 1)
 
             #read 
             # r d o(s)
@@ -430,8 +436,8 @@ Please be careful with this.
     def run(self, inPath, outPath):
         self.readFile(inPath)
         self.expandPseudo()
-        self.expandSymbols()
         self.assemble()
+        self.expandSymbols()
         self.printAsm(outPath)
 
 if __name__ == '__main__':
