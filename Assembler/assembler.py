@@ -449,12 +449,11 @@ This is still a work in progress"""
         print(helpPrint) 
         sys.exit(0)
 
-    inFile = 'Tests.asm'
-    outFile = 'Tests.bin'
+    inFile = ''
+    outFile = 'out.bin'
     asm = Assembler(0)
     if 'debug' in sys.argv:
         asm.debug = True
-    asm.debug = True
     for arg in sys.argv:
         if '.asm' in arg:
             inFile = arg
