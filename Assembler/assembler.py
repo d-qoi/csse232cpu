@@ -89,7 +89,7 @@ class Assembler:
                     instruction = instruction[0:instruction.index('#')] 
 
                 #inst = [x for x in [item for item in instruction.split()] if x] #Brilliant!
-                inst = re.split('[ ,\(\)]',instruction)
+                inst = re.split('[\s,\(\)]',instruction)
                 inst = [x for x in inst if x]
                 # I don't like this line, but it is shorter than alternatives
                 # This line trims the list into specific values
@@ -227,6 +227,7 @@ class Assembler:
         self.programCounter = 0
         while self.programCounter < len(self.program):
             if not isinstance(self.program[self.programCounter], list):
+                self.programCounter += 1 #whoops
                 continue
             # Branching l0gic
             if (self.program[self.programCounter][0] in ['beq','bne','bgt','blt'] and
@@ -287,7 +288,7 @@ class Assembler:
         if self.debug:
             print(inst,'=>')
         if 'j' in inst:
-            out = ['jr','$pc',inst[1]]
+            out = [['jr','$pc',inst[1]]]
         elif 'jal' in inst:
             out = [['cpy','$ra','4'],
                 ['add','$ra','$pc'],
@@ -450,10 +451,12 @@ This is still a work in progress"""
         sys.exit(0)
 
     inFile = ''
+#    inFile = 'RelPrime.asm'
     outFile = 'out.bin'
     asm = Assembler(0)
     if 'debug' in sys.argv:
         asm.debug = True
+#    asm.debug = True
     for arg in sys.argv:
         if '.asm' in arg:
             inFile = arg
