@@ -19,7 +19,7 @@ Done:
 	cpy	$h0 $s1			#set r0 to m
 	rsh	4				#set schwap
 	cpy	$ra $h0			#reload $ra
-	j	$ra 0			#return to the previous function
+	jr	$ra 0			#return to the previous function
 GCD:
 	rsh	8				#schwap to argument register
 Base:
@@ -27,7 +27,7 @@ Base:
 	cpy	$t0 $h1			#copy h1 to t0 for RSH
 	rsh	9				#schwap to return registers
 	cpy	$h0 $t0			#load t0 to r1
-	j	$ra 0			#return
+	jr	$ra 0			#return
 GMain:
 	beq	$h1 $z0 Exit	#jump to exit if b is zero
 	bgt	$h0 $h1 If		#jump to If if a>b
@@ -41,4 +41,4 @@ Exit:
 	cpy	$t0 $h0			#copy h0 to t0 for rsh schwap
 	rsh	9				#make sure we're in the right spot
 	cpy	$h0 $t0			#copy t0 to h0
-	j	$ra				#return
+	jr	$ra	0			#return
