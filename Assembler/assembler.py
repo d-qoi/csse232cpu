@@ -434,12 +434,12 @@ Please be careful with this.
     def JType(self, inst):
         out = ['','','']
         if len(inst) is 2:
-            inst = inst + [0]
+            inst = inst + ['0']
         out[0] = self.binaryMapInst[inst[0]]
-        if '$' in inst[1]: 
+        if not isinstance(inst[1], int) and '$' in inst[1]: 
             out[1] = self.binaryMapRegs[inst[1]]
             out[2] = inst[2]
-        elif '$' in inst[2]:
+        elif not isinstance(inst[2], int) and '$' in inst[2]:
             out[1] = self.binaryMapRegs[inst[2]]
             out[2] = inst[1]
         if len(out[2]) is 1:
@@ -472,7 +472,7 @@ Please be careful with this.
 if __name__ == '__main__':
     import sys
 
-    #sys.argv = [sys.argv[0], "JumpTests.asm","JumpTests.bin","debug"]
+    sys.argv = [sys.argv[0], "RelPrime.asm","RelPrime.bin","debug"]
     
     helpPrint = """The use of this program:
 assembler infile.asm <outfile.bin> <debug>
