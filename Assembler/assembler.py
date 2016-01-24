@@ -60,7 +60,7 @@ class Assembler:
     #STypeList = {'sudo'}
 
 
-    PseudoList = {'jal','j'} # Please update and see the method
+    PseudoList = {'jal','j','psh','pop'} # Please update and see the method
 
     def __init__(self, progStart):
         import re
@@ -126,7 +126,7 @@ class Assembler:
     # for updating things after expanding with pseudo instructions
     def updateSymbols(self, line, offset):
         for sym, val in self.symbolDef.items():
-            if val >= line:
+            if val > line:
                 self.symbolDef[sym] += offset
 
 
@@ -156,7 +156,19 @@ class Assembler:
             self.programCounter += 1
             
 
-
+    def assembleCurrentLine(self):
+        if self.debug:
+            temp = "{0} =>".format(self.program[self.programCounter])
+            if self.program[self.programCounter][0] in self.ATypeList:
+                self.AType(self.program[self.programCounter])
+            elif self.program[self.programCounter][0] in self.BTypeList:
+                self.BType(self.program[self.programCounter])
+            elif self.program[self.programCounter][0] in self.HTypeList:
+                self.HType(self.program[self.programCounter])
+            elif self.program[self.programCounter][0] in self.JTypeList:
+                self.JType(self.program[self.programCounter])
+            if self.debug:
+                print(temp,self.program[self.programCounter])
 
     def branchToJump(self, i):
         #self.program[i][3] = hex((self.symbolDef[self.program[i][3]] - i + 2) & 0xF)[2:] + " Needs to be changed, BTJD"
@@ -226,12 +238,13 @@ class Assembler:
             print(self.symbolDef)
         self.programCounter = 0
         while self.programCounter < len(self.program):
+
             if not isinstance(self.program[self.programCounter], list):
                 self.programCounter += 1 #whoops
                 continue
             # Branching l0gic
             if (self.program[self.programCounter][0] in ['beq','bne','bgt','blt'] and
-                self.program[self.programCounter][3] in self.symbolDef):
+                            self.program[self.programCounter][3] in self.symbolDef):
                 offset = self.symToOffset(self.program[self.programCounter][3], self.programCounter)
                 if offset > 15 or offset < 0:
                     self.branchToJump(self.programCounter)
@@ -239,12 +252,15 @@ class Assembler:
                     self.program[self.programCounter][3] = self.toHexUnsigned(offset)
             # Jumping logic
             elif (self.program[self.programCounter][0] in ['jr'] and
+                  len(self.program[self.programCounter]) > 2 and
                   self.program[self.programCounter][2] in self.symbolDef):
                 offset = self.symToOffset(self.program[self.programCounter][2], self.programCounter)
                 if offset > 127 or offset < -128: #2^8 signed is 127 to -128
                     self.jumpToBigJump(self.programCounter)
                 else:
                     self.program[self.programCounter][2] = self.toHexSigned(offset)
+
+            self.assembleCurrentLine() #trying this here
 
             self.programCounter += 1 #NOT MISSING THIS AGAIN
 
@@ -257,10 +273,10 @@ class Assembler:
                 temp = self.program[i]
             if len(self.program[i]) is 4: # to make sure that constants don't crash this
                 if self.program[i][3] in self.symbolDef: # to make sure that it is a correct symbol
-                    if self.program[i][0] in [self.symbolDef['beq'],
-                                              self.symbolDef['bne'],
-                                              self.symbolDef['bgt'],
-                                              self.symbolDef['blt']]: # This is all of the branching instructions
+                    if self.program[i][0] in [self.binaryMapInst['beq'],
+                                              self.binaryMapInst['bne'],
+                                              self.binaryMapInst['bgt'],
+                                              self.binaryMapInst['blt']]: # This is all of the branching instructions
                         if (self.symbolDef[self.program[i][3]] - i + self.symOff) > 15:
                             self.branchToJump(i)
                         elif (self.symbolDef[self.program[i][3]] - i + self.symOff) < 0:
@@ -274,7 +290,7 @@ class Assembler:
                     else:
                         raise Exception("Unknown use of Synmbols: " + str(self.program[i]))
             elif len(self.program[i]) is 3: #to make sure that it can handel jumps
-                if self.program[i][0] in [self.symbolDef['jr']]:
+                if self.program[i][0] in [self.binaryMapInst['jr']]:
                     if self.program[i][2] in self.symbolDef:
                         if self.debug:
                             print(self.program[i], hex((self.symbolDef[self.program[i][2]] - i + self.symOff) & 0xFF))
@@ -296,7 +312,15 @@ class Assembler:
             out = [['cpy','$ra','4'],
                 ['add','$ra','$pc'],
                 ['jr','$pc',inst[1]]]
-            self.updateSymbols(self.programCounter, 2)
+        elif 'psh' in inst:
+            out = [['sub','$sp','4'],
+                    ['w',inst[1],'$sp','0']]
+        elif 'pop' in inst:
+            out = [['r',inst[1],'$sp','0'],
+                    ['add','$sp','4']]
+
+        if len(out) > 1:
+            self.updateSymbols(self.programCounter, len(out)-1)
 
         self.program.pop(self.programCounter)
         out.reverse()
@@ -409,11 +433,16 @@ Please be careful with this.
 
     def JType(self, inst):
         out = ['','','']
+        if len(inst) is 2:
+            inst = inst + [0]
         out[0] = self.binaryMapInst[inst[0]]
-        out[1] = self.binaryMapRegs[inst[1]]
-        if len(inst) is 3:
+        if '$' in inst[1]: 
+            out[1] = self.binaryMapRegs[inst[1]]
             out[2] = inst[2]
-            if len(out[2]) is 1:
+        elif '$' in inst[2]:
+            out[1] = self.binaryMapRegs[inst[2]]
+            out[2] = inst[1]
+        if len(out[2]) is 1:
                 out[2] = '0' + out[2]
         else:
             out[2] = '00'
@@ -436,12 +465,14 @@ Please be careful with this.
     def run(self, inPath, outPath):
         self.readFile(inPath)
         self.expandPseudo()
-        self.assemble()
+        #self.assemble()
         self.expandSymbols()
         self.printAsm(outPath)
 
 if __name__ == '__main__':
     import sys
+
+    #sys.argv = [sys.argv[0], "JumpTests.asm","JumpTests.bin","debug"]
     
     helpPrint = """The use of this program:
 assembler infile.asm <outfile.bin> <debug>
@@ -457,12 +488,10 @@ This is still a work in progress"""
         sys.exit(0)
 
     inFile = ''
-#    inFile = 'RelPrime.asm'
     outFile = 'out.bin'
     asm = Assembler(0)
     if 'debug' in sys.argv:
         asm.debug = True
-#    asm.debug = True
     for arg in sys.argv:
         if '.asm' in arg:
             inFile = arg

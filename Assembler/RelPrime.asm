@@ -41,4 +41,4 @@ Exit:
 	cpy	$t0 $h0			#copy h0 to t0 for rsh schwap
 	rsh	9				#make sure we're in the right spot
 	cpy	$h0 $t0			#copy t0 to h0
-	jr	$ra	0			#return
+	jr	$ra  			#return
