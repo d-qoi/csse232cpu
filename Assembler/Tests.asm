@@ -44,3 +44,12 @@ beq $0 $t1 test3
 
 # don't know what this does
 jal test3
+
+#and now testing pushing and poping
+
+psh $t0
+pop $t0
+
+# read and write
+r $t0 0($sp)
+w 0($sp) $t0

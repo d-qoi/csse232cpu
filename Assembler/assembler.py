@@ -72,7 +72,7 @@ class Assembler:
             raise Exception('Instruction not in instructions', inst[0])
         for i in inst:
             if '$' in i and not i in self.binaryMapRegs:
-                raise Exception('Register not real',i)
+                raise Exception('Register not real',i,'at line',len(self.program),'in',inst)
 
 
     def readFile(self, inPath):
@@ -143,14 +143,6 @@ class Assembler:
                 self.HType(self.program[self.programCounter])
             elif self.program[self.programCounter][0] in self.JTypeList:
                 self.JType(self.program[self.programCounter])
-#           elif self.program[self.programCounter][0] in self.RTypeList:
-#               self.RType(self.program[self.programCounter])
-#           elif self.program[self.programCounter][0] in self.STypeList:
-#                self.SType(self.program[self.programCounter])
-#            elif self.program[self.programCounter][0] in self.PseudoList: #sudo instruction expansion
-#                self.pseudoExpand(self.program[self.programCounter])
-#                if self.debug:
-#                    print(self.program[-3:],self.program[self.programCounter-1])
             if self.debug:
                 print(temp,self.program[self.programCounter])
             self.programCounter += 1
@@ -159,16 +151,16 @@ class Assembler:
     def assembleCurrentLine(self):
         if self.debug:
             temp = "{0} =>".format(self.program[self.programCounter])
-            if self.program[self.programCounter][0] in self.ATypeList:
-                self.AType(self.program[self.programCounter])
-            elif self.program[self.programCounter][0] in self.BTypeList:
-                self.BType(self.program[self.programCounter])
-            elif self.program[self.programCounter][0] in self.HTypeList:
-                self.HType(self.program[self.programCounter])
-            elif self.program[self.programCounter][0] in self.JTypeList:
-                self.JType(self.program[self.programCounter])
-            if self.debug:
-                print(temp,self.program[self.programCounter])
+        if self.program[self.programCounter][0] in self.ATypeList:
+            self.AType(self.program[self.programCounter])
+        elif self.program[self.programCounter][0] in self.BTypeList:
+            self.BType(self.program[self.programCounter])
+        elif self.program[self.programCounter][0] in self.HTypeList:
+            self.HType(self.program[self.programCounter])
+        elif self.program[self.programCounter][0] in self.JTypeList:
+            self.JType(self.program[self.programCounter])
+        if self.debug:
+            print(temp,self.program[self.programCounter])
 
     def branchToJump(self, i):
         #self.program[i][3] = hex((self.symbolDef[self.program[i][3]] - i + 2) & 0xF)[2:] + " Needs to be changed, BTJD"
@@ -304,6 +296,11 @@ class Assembler:
 
     def pseudoExpandHelper(self, inst): #less Hacky bullshit
     #I can make this work maybe
+    # need to split things the way that the read in fuction does
+    # split things that would be seperated by anything into seperate index
+    # write example:
+    # assembly: w 0($sp) $t0
+    # list:     ['w','0','$sp','$t0']
         if self.debug:
             print(inst,'=>')
         if 'j' in inst:
@@ -314,9 +311,9 @@ class Assembler:
                 ['jr','$pc',inst[1]]]
         elif 'psh' in inst:
             out = [['sub','$sp','4'],
-                    ['w',inst[1],'$sp','0']]
+                    ['w','0','$sp',inst[1]]]
         elif 'pop' in inst:
-            out = [['r',inst[1],'$sp','0'],
+            out = [['r',inst[1],'0','$sp'],
                     ['add','$sp','4']]
 
         if len(out) > 1:
@@ -342,9 +339,7 @@ class Assembler:
 
     def printAsm(self, outFile):
         with open(outFile, 'w') as dest:
-            dest.write("""THIS IS NOT DONE YET
-The pseudo instructions are not yet finished, they still need to be implemented.
-Please be careful with this.
+            dest.write("""Version 1.0
 
 
 """)
@@ -405,19 +400,20 @@ Please be careful with this.
             # r d s o
 
             # write
-            # w s o(d)
+            # w o(d) s
             # w d s o
     def BType(self, inst):
         out = ['','','','']
         if inst[0] in ['r','w']:
             out[0] = self.binaryMapInst[inst[0]]
-            out[3] = inst[2]
             if inst[0] is 'r':
                 out[1] = self.binaryMapRegs[inst[1]] #setting destination
                 out[2] = self.binaryMapRegs[inst[3]] #setting source
+                out[3] = inst[2]
             else:
                 out[1] = self.binaryMapRegs[inst[3]] #setting dest
-                out[2] = self.binaryMapRegs[inst[1]] #setting srouce
+                out[2] = self.binaryMapRegs[inst[2]] #setting srouce
+                out[3] = inst[1]
         else: #Handeling Branches
             out[0] = self.binaryMapInst[inst[0]]
             out[1] = self.binaryMapRegs[inst[1]]
@@ -436,16 +432,14 @@ Please be careful with this.
         if len(inst) is 2:
             inst = inst + ['0']
         out[0] = self.binaryMapInst[inst[0]]
-        if not isinstance(inst[1], int) and '$' in inst[1]: 
+        if '$' in inst[1]: 
             out[1] = self.binaryMapRegs[inst[1]]
             out[2] = inst[2]
-        elif not isinstance(inst[2], int) and '$' in inst[2]:
+        elif '$' in inst[2]:
             out[1] = self.binaryMapRegs[inst[2]]
             out[2] = inst[1]
         if len(out[2]) is 1:
                 out[2] = '0' + out[2]
-        else:
-            out[2] = '00'
         self.program[self.programCounter] = out
 
     def RType(self, inst):
@@ -472,16 +466,18 @@ Please be careful with this.
 if __name__ == '__main__':
     import sys
 
-    sys.argv = [sys.argv[0], "RelPrime.asm","RelPrime.bin","debug"]
+    #sys.argv = [sys.argv[0], "Tests.asm","Tests.bin","debug"]
     
-    helpPrint = """The use of this program:
+    helpPrint = """
+
+The use of this program:
 assembler infile.asm <outfile.bin> <debug>
 -h:     Prints this message
 
 if the outfile is not specified, it will write to out.bin
 if 'debug'(all lower) is passed anywhere, it will toggle debugging mode
 
-This is still a work in progress"""
+"""
 
     if '-h' in sys.argv:
         print(helpPrint) 
