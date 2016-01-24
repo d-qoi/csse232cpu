@@ -56,8 +56,6 @@ class Assembler:
     BTypeList = {'beq','bnq','bne','bgt','blt','r','w'}
     HTypeList = {'rsh','sudo'}
     JTypeList = {'jr'}
-    #RTypeList = {'r','w'}
-    #STypeList = {'sudo'}
 
 
     PseudoList = {'jal','j','psh','pop'} # Please update and see the method
@@ -129,24 +127,6 @@ class Assembler:
             if val > line:
                 self.symbolDef[sym] += offset
 
-
-    def assemble(self):
-        self.programCounter = 0
-        while self.programCounter < len(self.program):
-            if self.debug:
-                temp = "{0} =>".format(self.program[self.programCounter])
-            if self.program[self.programCounter][0] in self.ATypeList:
-                self.AType(self.program[self.programCounter])
-            elif self.program[self.programCounter][0] in self.BTypeList:
-                self.BType(self.program[self.programCounter])
-            elif self.program[self.programCounter][0] in self.HTypeList:
-                self.HType(self.program[self.programCounter])
-            elif self.program[self.programCounter][0] in self.JTypeList:
-                self.JType(self.program[self.programCounter])
-            if self.debug:
-                print(temp,self.program[self.programCounter])
-            self.programCounter += 1
-            
 
     def assembleCurrentLine(self):
         if self.debug:
@@ -255,44 +235,6 @@ class Assembler:
             self.assembleCurrentLine() #trying this here
 
             self.programCounter += 1 #NOT MISSING THIS AGAIN
-
-    def expandSymbolsold(self):
-        if self.debug:
-            print(self.symbolDef)
-        i = 0
-        while i < len(self.program):
-            if self.debug:
-                temp = self.program[i]
-            if len(self.program[i]) is 4: # to make sure that constants don't crash this
-                if self.program[i][3] in self.symbolDef: # to make sure that it is a correct symbol
-                    if self.program[i][0] in [self.binaryMapInst['beq'],
-                                              self.binaryMapInst['bne'],
-                                              self.binaryMapInst['bgt'],
-                                              self.binaryMapInst['blt']]: # This is all of the branching instructions
-                        if (self.symbolDef[self.program[i][3]] - i + self.symOff) > 15:
-                            self.branchToJump(i)
-                        elif (self.symbolDef[self.program[i][3]] - i + self.symOff) < 0:
-                            self.branchToJump(i)
-                        else:
-                            if self.debug:
-                                print(self.program[i], hex((self.symbolDef[self.program[i][3]] - i + self.symOff) & 0xF))
-                            self.program[i][3] = hex((self.symbolDef[self.program[i][3]] - i + self.symOff) & 0xF)[2:]
-                            if self.debug:
-                                print(self.program[i])
-                    else:
-                        raise Exception("Unknown use of Synmbols: " + str(self.program[i]))
-            elif len(self.program[i]) is 3: #to make sure that it can handel jumps
-                if self.program[i][0] in [self.binaryMapInst['jr']]:
-                    if self.program[i][2] in self.symbolDef:
-                        if self.debug:
-                            print(self.program[i], hex((self.symbolDef[self.program[i][2]] - i + self.symOff) & 0xFF))
-                        self.program[i][2] = hex((self.symbolDef[self.program[i][2]] - i + self.symOff) & 0xFF)[2:]
-                        if len(self.program[i][2]) < 2:
-                            self.program[i][2] = '0'+self.program[i][2]
-                        if self.debug:
-                            print(self.program[i])
-            i += 1 #because I can't use the for loop and expand the list
-
 
     def pseudoExpandHelper(self, inst): #less Hacky bullshit
     #I can make this work maybe
