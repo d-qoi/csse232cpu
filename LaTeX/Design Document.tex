@@ -6,6 +6,8 @@
 \usepackage{makecell}
 \usepackage{listings}
 \usepackage{pdflscape}
+\usepackage{graphicx}
+\graphicspath{ {images/} }
 
 \title{Schwap CPU Design Documentation}
 \author{Charlie Fenoglio, Alexander Hirschfeld, Andrew McKee, and Wesley Van Pelt}
@@ -176,7 +178,7 @@
 				bgt  & bgt [src0] [src1] label & \thead{blt [src0] [src1] Next \\ j label \\ Next:} & \thead{Branching up or branching down \\ more than 16 instructions}\\ \hline
 				blt  & blt [src0] [src1] label & \thead{bgt [src0] [src1] Next \\ j label \\ Next:} & \thead{Branching up or branching down \\ more than 16 instructions}\\ \hline
 			\end{tabular} \end{center}
-\section{RTL}
+\section{RTL and Datapath}
 	\subsection{Components}
 		\subsubsection{Single 16-bit Register}
 			\begin{center} \begin{tabular}{| l | l | c |} \hline 
@@ -253,16 +255,22 @@
 				Control & WriteData & 16   & Data to be written (at MemAddr0) \\ \hline
 			\end{tabular} \end{center}
 	\newpage \begin{landscape}
-	\subsection{Summary Chart}
-		\begin{center} \begin{tabular}{| c | c | c | c | c | c | c | c |} \hline
-			\multirow{2}{*}{Step} & \multirow{2}{*}{A-Type} & \multicolumn{3}{c|}{B-Type} & \multicolumn{2}{c|}{H-Type} & \multirow{2}{*}{J-Type} \\ \cline{3-7}
-			& & Branches & Read & Write & Schwap & Sudo & \\ \hline
-			\thead{Get \\ instruction} & \multicolumn{7}{c|}{\thead{IR = MEM[PC] \\ NextInst = MEM[PC+2] \\ PC += 2}} \\ \hline
-			\thead{Decode ins-\\truction and \\ get stuff from \\ registers} & \multicolumn{7}{c|}{\thead{R0 = reg\#IR[8:11] \\ if(IR[3:0]==0x1) \{R1 = NextInst; PC += 2\} else \{R1 = reg\#IR[7:4]\} \\ ALUout = PC + SE(IR[15:12]) \\ Hreg = IR[3:0]}} \\ \hline
-			\thead{Do \\ computation} & \thead{ALUout = R0 aluop R1} & \thead{PCtemp = ALUout \\ if(R0 aluop R1 == 0) \\ PC = PCtemp} & \multicolumn{2}{c|}{\thead{ALUout = R1 + SE(Hreg$<<$1)}} & \thead{SchLatch\\= Hreg} & \thead{Change on\\Code\#} & \thead{PC = R0+\\SE(IR[7:0]$<<$1)} \\ \hline
-			\thead{Output} & \thead{R0 in reg. file = ALUout} & & \thead{MemRead = MEM[ALUout]} & \thead{MEM[ALUout] \\= R0} & \multicolumn{3}{c|}{ } \\ \hline
-			\thead{Output 2} & \multicolumn{2}{c|}{ } & \thead{R0 in reg. file = MemRead} & \multicolumn{4}{c|}{ } \\ \hline
-		\end{tabular} \end{center} \end{landscape}
+	\subsection{Summary Charts}
+		\subsubsection{RTL}
+			\begin{center} \begin{tabular}{| c | c | c | c | c | c | c | c |} \hline
+				\multirow{2}{*}{Step} & \multirow{2}{*}{A-Type} & \multicolumn{3}{c|}{B-Type} & \multicolumn{2}{c|}{H-Type} & \multirow{2}{*}{J-Type} \\ \cline{3-7}
+				& & Branches & Read & Write & Schwap & Sudo & \\ \hline
+				\thead{Get \\ instruction} & \multicolumn{7}{c|}{\thead{IR = MEM[PC] \\ NextInst = MEM[PC+2] \\ PC += 2}} \\ \hline
+				\thead{Decode ins-\\truction and \\ get stuff from \\ registers} & \multicolumn{7}{c|}{\thead{R0 = reg\#IR[8:11] \\ if(IR[3:0]==0x1) \{R1 = NextInst; PC += 2\} else \{R1 = reg\#IR[7:4]\} \\ ALUout = PC + SE(IR[15:12]) \\ Hreg = IR[3:0]}} \\ \hline
+				\thead{Do \\ computation} & \thead{ALUout = R0 aluop R1} & \thead{PCtemp = ALUout \\ if(R0 aluop R1 == 0) \\ PC = PCtemp} & \multicolumn{2}{c|}{\thead{ALUout = R1 + SE(Hreg$<<$1)}} & \thead{SchLatch\\= Hreg} & \thead{Change on\\Code\#} & \thead{PC = R0+\\SE(IR[7:0]$<<$1)} \\ \hline
+				\thead{Output} & \thead{R0 in reg. file = ALUout} & & \thead{MemRead = MEM[ALUout]} & \thead{MEM[ALUout] = R0} & \multicolumn{3}{c|}{ } \\ \hline
+				\thead{Output 2} & \multicolumn{2}{c|}{ } & \thead{R0 in reg. file = MemRead} & \multicolumn{4}{c|}{ } \\ \hline
+			\end{tabular} \end{center}
+		\subsubsection{Datapath}
+			\begin{center}
+				\includegraphics[width=22.5cm]{datapath}
+			\end{center}
+		\end{landscape}
 	\subsection{Tests}
 		\subsubsection{A-Type}
 			\begin{tabular}{ r  r  p{12cm} }
@@ -326,6 +334,7 @@
 	\subsection{Code}
 		\begin{enumerate}
 			\item Avoid branching up and more than 16 instructions down.  The hardware implementation of branching limits branching to only going down a maximum of 16 instructions, but the assembler will convert these to a combination of a branch and jump.
+			\item Schwap groups are not preserved across calls.
 		\end{enumerate}
 \section{Examples}
 	\lstset{language=sh}
