@@ -248,15 +248,15 @@ class Assembler:
         if 'j' in inst:
             out = [['jr','$pc',inst[1]]]
         elif 'jal' in inst:
-            out = [['cpy','$ra','4'],
+            out = [['cpy','$ra','2'],
                 ['add','$ra','$pc'],
                 ['jr','$pc',inst[1]]]
         elif 'psh' in inst:
-            out = [['sub','$sp','4'],
+            out = [['sub','$sp','2'],
                     ['w','0','$sp',inst[1]]]
         elif 'pop' in inst:
             out = [['r',inst[1],'0','$sp'],
-                    ['add','$sp','4']]
+                    ['add','$sp','2']]
 
         if len(out) > 1:
             self.updateSymbols(self.programCounter, len(out)-1)
