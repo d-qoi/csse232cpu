@@ -1,0 +1,1 @@
+-intstyle "ise" -incremental -lib "unisims_ver" -lib "unimacro_ver" -lib "xilinxcorelib_ver" -o "C:/XilinxProjectsLocal/CarryLookahead/TestCarry16b_isim_beh.exe" -prj "C:/XilinxProjectsLocal/CarryLookahead/TestCarry16b_beh.prj" "work.TestCarry16b" "work.glbl" 

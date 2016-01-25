@@ -1,0 +1,10 @@
+Command line:
+   TestCarry16b_isim_beh.exe
+     -simmode  gui
+     -simrunnum  0
+     -socket  62832
+
+Sun Jan 24 20:38:44 2016
+
+
+ Elaboration Time: 0.109375 sec
