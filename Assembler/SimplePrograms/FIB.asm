@@ -4,7 +4,7 @@ main:
 	cpy $t0 0
 	cpy $t1 1
 
-	cpy $s0 $t1 #setting up for alt path through loop
+	cpy $s0 $t0 #setting up for alt path through loop
 	cpy $s1 500 #ending number
 
 	rsh 12 #for sudo call
