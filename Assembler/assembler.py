@@ -278,31 +278,6 @@ class Assembler:
 
             self.programCounter += 1
 
-
-    def printAsm(self, outFile):
-        with open(outFile, 'w') as dest:
-            dest.write("""Version 1.0
-
-
-""")
-            for line in self.program:
-                if not isinstance(line, str):
-                    dest.write('0x')
-                else:
-                    if line.isdigit():
-                        dest.write(hex(int(line)))
-                    else:
-                        dest.write(line)
-                    dest.write('\n')
-                    continue
-                for inst in line:
-                    if isinstance(inst, str):
-                        dest.write(inst)
-                    else:
-                        dest.write(hex(inst)[2:])
-                dest.write('\n')
-
-
 # Different types of instructions, may need to change later.
 # If this is changed remember to change the list of instructions at the top
     def AType(self, inst):
@@ -325,7 +300,7 @@ class Assembler:
             self.programCounter += 1 #because I am inserting the immediate, the PC needs to be increased
             self.updateSymbols(self.programCounter, 1)
         else: # case for which we are loading an immediate into the second source on the same line
-            out[1] = 0x1 
+            out[0] = 0x1 
             out[1] = self.binaryMapRegs[inst[1]]
             out[2] = self.binaryMapRegs[inst[2]]
             out[3] = self.binaryMapInst[inst[0]]
@@ -397,6 +372,29 @@ class Assembler:
         out[0] = self.binaryMapInst[inst[0]]
         self.program[self.programCounter] = out
 
+    def printAsm(self, outFile):
+        with open(outFile, 'w') as dest:
+            dest.write("""Version 1.01
+
+
+""")
+            for line in self.program:
+                if not isinstance(line, str):
+                    dest.write('0x')
+                else:
+                    if line.isdigit():
+                        dest.write(hex(int(line)))
+                    else:
+                        dest.write(line)
+                    dest.write('\n')
+                    continue
+                for inst in line:
+                    if isinstance(inst, str):
+                        dest.write(inst)
+                    else:
+                        dest.write(hex(inst)[2:])
+                dest.write('\n')
+
 
     def run(self, inPath, outPath):
         self.readFile(inPath)
@@ -404,6 +402,7 @@ class Assembler:
         #self.assemble()
         self.expandSymbols()
         self.printAsm(outPath)
+
 
 if __name__ == '__main__':
     import sys
