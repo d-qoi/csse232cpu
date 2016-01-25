@@ -1,0 +1,31 @@
+Journal
+=======
+
+Milestone One
+-------------
+
+In this milestone we accomplished the following:
+
+*	Decided on CPU Architecture, Load-Store
+*	Decided on CPU Instruction set basics
+	+	ALU instructions use the first source as the Destination
+	+	There is a set of registers that is swappable, henceforth know as Schwappable Registers.
+*	Wrote Assembly instructions for RelPrime
+
+Alex and Wesley worked on the design of the CPU and Instruction set. Wesley created 
+the documentation and Charlie scribed and provided arguments and counter arguments for 
+ideas.  Andrew didn't show up or reply to emails.
+
+Milestone Two
+-------------
+
+In this milestone we accomplished the following:
+
+*	Implemented recommendations from previous milestone
+*	Started design of components
+	+	Created rough outline of the ALU on a whiteboard
+		+	Created 4-bit carry look ahead adder in verilog
+	+	Figured out how our "SchwapBox" will be implemented
+*	Created RTL
+
+Our primary meeting was on Sunday the 17th.  We also had more, smaller meetings throughout the week.  During meetings we all contributed to what we were discussing, which were primarily the RTL summary table, SchwapBox, and ALU.  Outside of the meetings Alex primarily worked on the assembler and almost finished it.  Andrew was also experimenting with an assembler, then implemented the 4-bit carry look ahead adder in verilog and wrote test cases for it.  Wesley did all of the documentation and journal.
