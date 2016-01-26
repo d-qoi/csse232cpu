@@ -107,7 +107,7 @@
 				0x0 & and & \thead{Bitwise ands 2 values}\\ \hline
 			    0x1 & orr & \thead{Bitwise ors 2 values}\\ \hline
 			    0x2 & xor & \thead{Bitwise xors 2 values}\\ \hline
-			    0x3 & not & \thead{Bitwise nots 2 values}\\ \hline
+			    0x3 & not & \thead{Bitwise nots the value}\\ \hline
 			    0x4 & tsc & \thead{Converts a number to 2's compliment}\\ \hline
 			    0x5 & slt & \thead{Set less than}\\ \hline
 			    0x6 & sll & \thead{Left logical bit shift}\\ \hline
@@ -117,12 +117,14 @@
 			    0xA & sub & \thead{Subtracts 2 values}\\ \hline
 			    0xF & cpy & \thead{Copies the value in one register to another}\\ \hline
 			\end{tabular} \end{center}
-			All A-Type instructions, except for tsc, slt, and cpy, follow the syntax in the first section of the table below.  Those three can be found in the next sections.
+			All A-Type instructions, except for not, tsc, slt, and cpy, follow the syntax in the first section of the table below.  Those three can be found in the next sections.
 			\begin{center} \begin{tabular}{| c | l | c | c |} \hline
 				\thead{OP\\Code}     & Syntax                       & Meaning & Description \\ \hline
 				0x0                  & NAM [dest] [src]             & \thead{dest $=$ dest OP src} & \thead{OPs the values in registers [dest] and [src]}\\ \hline
 				\multirow{3}{*}{0x1} & NAM [dest] [src] [immediate] & \thead{src $=$ immediate \\ dest $=$ dest OP src} & \thead{Loads the immediate into the register [src] and \\ then OPs the values in registers [dest] and [src]}\\ \cline{2-4}
 				                     & NAM [dest] [immediate]       & \thead{dest $=$ dest OP immediate} & \thead{OPs the immediate and the value in the \\ register [dest]}\\ \hline \hline
+				0x0                  & not [dest]                   & \thead{dest $=$ $\sim$dest} & \thead{Bitwise nots the value in the register [dest]}\\ \hline
+				0x1                  & not [immediate]              & \thead{dest $=$ $\sim$immediate} & \thead{Bitwise nots the immediate and puts the\\result in the register [dest]}\\ \hline \hline
 				0x0                  & tsc [dest]                   & \thead{dest $=$ $\sim$dest + 1} & \thead{Converts the value in the register [dest]\\to 2's compliment}\\ \hline
 				\multirow{3}{*}{0x1} & tsc [dest] [src] [immediate] & \thead{src $=$ immediate \\ dest $=$ $\sim$src + 1} & \thead{Loads the immediate into the register [src] \\ and then converts the value in register [src] \\ to 2's compliment and stores into [dest]}\\ \cline{2-4}
 						             & tsc [dest] [immediate]       & \thead{dest $=$ $\sim$immediate + 1} & \thead{Converts the immediate to 2's compliment \\ and stores into the register [dest]}\\ \hline \hline
@@ -285,6 +287,25 @@
 			\end{center}
 		\end{landscape}
 	\subsection{Unit Tests and Implementation}
+		\subsubsection{Single 16-bit Registers}
+			\begin{tabular}{ r  r  p{12cm} }
+					Implementation: & \multicolumn{2}{l}{Use Micah's 16 bit register}\\
+					                &    & \\
+					         Tests: & 1. & Pass in a 16-bit value with writing enabled $\Rightarrow$ The whole value should be stored\\
+					                & 2. & Pass in a 16-bit value with writing disabled $\Rightarrow$ The none of the value should be stored\\
+			\end{tabular}
+		\subsubsection{Single 4-bit Registers}
+			\begin{tabular}{ r  r  p{12cm} }
+					Implementation: & \multicolumn{2}{l}{Use Micah's 16 bit register and change it to only hold 4 bits}\\
+					                &    & \\
+					         Tests: & 1. & Pass in a 4-bit value with writing enabled $\Rightarrow$ The whole value should be stored\\
+					                & 2. & Pass in a 4-bit value with writing disabled $\Rightarrow$ The none of the value should be stored\\
+			\end{tabular}
+		\subsubsection{SE$<<$1}
+		\subsubsection{16-bit Adder}
+		\subsubsection{ALU}
+		\subsubsection{Register File}
+		\subsubsection{Main Memory}
 	\subsection{Integration Tests}
 	\subsection{Plan Tests}
 		\subsubsection{A-Type}
