@@ -248,7 +248,7 @@ class Assembler:
         if 'j' in inst:
             out = [['jr','$pc',inst[1]]]
         elif 'jal' in inst:
-            out = [['cpy','$ra','2'],
+            out = [['cpy','$ra','6'],
                 ['add','$ra','$pc'],
                 ['jr','$pc',inst[1]]]
         elif 'psh' in inst:
