@@ -6,16 +6,16 @@ main:
 	rsh 8
 	cpy $h0 10
 	cpy $h1 3
-	sub $pc 4
-	w 0($pc) $h0 	# Storing things for later use
-	w 1($pc) $h1
+	sub $sp 4
+	w 0($sp) $h0 	# Storing things for later use
+	w 1($sp) $h1
 	jal mult
 	rsh 9
 	cpy $t0 $h0
 	rsh 12
-	r $h0 0($pc)	# reading to print
-	r $h1 1($pc)
-	add $pc 4
+	r $h0 0($sp)	# reading to print
+	r $h1 1($sp)
+	add $sp 4
 	cpy $h2 $t0
 	sudo 10 		#a ssembler sudo for print the assembler regs.
 	sudo 0 			# end the program
