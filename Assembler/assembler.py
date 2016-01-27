@@ -171,11 +171,11 @@ class Assembler:
         if self.debug:
             temp = self.program[i]
         sym = self.program[i][2]
-        offset = self.symbolDef[sym]
+        offset = str(self.symbolDef[sym])
         if self.debug:
             print('jump to',sym,'being converted to big jump')
         self.program.insert(i,['cpy','$a1',offset])
-        self.program[i+1] = ['jr','$a1',0]
+        self.program[i+1] = ['jr','$a1','0']
 
         if self.debug:
             print(temp,"became:\n",self.program[i],'\n',self.program[i+1])
@@ -374,7 +374,7 @@ class Assembler:
 
     def printAsm(self, outFile):
         with open(outFile, 'w') as dest:
-            dest.write("""Version 1.01
+            dest.write("""Version 1.02
 
 
 """)
@@ -407,7 +407,7 @@ class Assembler:
 if __name__ == '__main__':
     import sys
 
-    #sys.argv = [sys.argv[0], "Tests.asm","Tests.bin","debug"]
+    #sys.argv = [sys.argv[0], "SimplePrograms\\SIMPLEPROCEDURES.asm","debug"]
     
     helpPrint = """
 
