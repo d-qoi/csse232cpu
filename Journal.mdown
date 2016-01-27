@@ -12,9 +12,7 @@ In this milestone we accomplished the following:
 	+	There is a set of registers that is swappable, henceforth know as Schwappable Registers.
 *	Wrote Assembly instructions for RelPrime
 
-Alex and Wesley worked on the design of the CPU and Instruction set. Wesley created 
-the documentation and Charlie scribed and provided arguments and counter arguments for 
-ideas.  Andrew didn't show up or reply to emails.
+Alex and Wesley worked on the design of the CPU and Instruction set. Wesley created the documentation and Charlie scribed and provided arguments and counter arguments for ideas.  Andrew didn't show up or reply to emails.
 
 Milestone Two
 -------------
