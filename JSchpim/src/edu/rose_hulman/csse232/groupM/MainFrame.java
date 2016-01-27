@@ -18,6 +18,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
@@ -31,6 +32,7 @@ public class MainFrame extends JFrame {
 	
 	private Emulator emu;
 	
+	private JScrollPane scroll;
 	private JTextArea console;
 	private JTextArea instructionMem;
 	private JTextArea dataMem;
@@ -41,6 +43,7 @@ public class MainFrame extends JFrame {
 		super("JSchpim");
 		MainFrame selfRef = this;
 		emu = new Emulator(DEFAULT_SP, DEFAULT_PC);
+		emu.setConsoleStream(new ConsoleStream());
 		this.setLayout(new BorderLayout());
 		JPanel buttonsPanel = new JPanel();
 		JButton reset = new JButton("Reset");
@@ -101,16 +104,15 @@ public class MainFrame extends JFrame {
 		registerPanel.add(schwapRegs = new SchwapPanel(), BorderLayout.CENTER);
 		main.add(registerPanel);
 		JSplitPane leftPanel = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-		leftPanel.add(console = new JTextArea());
+		leftPanel.add(scroll = new JScrollPane(console = new JTextArea()));
+		console.setEditable(false);
+		console.setForeground(Color.RED);
+		scroll.setPreferredSize(new Dimension(600, 200));
 		JSplitPane mem = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
 		mem.add(instructionMem = new JTextArea());
 		mem.add(dataMem = new JTextArea());		
 		leftPanel.add(mem);
 		main.add(leftPanel);
-		console.setEditable(false);
-		console.setPreferredSize(new Dimension(600, 200));
-		console.setForeground(Color.RED);
-		emu.setConsoleStream(new ConsoleStream(console));
 		instructionMem.setEditable(false);
 		instructionMem.setPreferredSize(new Dimension(200, 100));
 		dataMem.setEditable(false);
@@ -258,17 +260,12 @@ public class MainFrame extends JFrame {
 	}
 	
 	class ConsoleStream implements Appendable {
-
-		private JTextArea console;
-		
-		public ConsoleStream(JTextArea con) {
-			console = con;
-		}
-		
+				
 		@Override
 		public Appendable append(CharSequence arg0) throws IOException {
 			console.append(arg0.toString() + "\n");
 			System.out.println(arg0.toString());
+			scroll.getVerticalScrollBar().setValue(scroll.getVerticalScrollBar().getMaximum());
 			return this;
 		}
 

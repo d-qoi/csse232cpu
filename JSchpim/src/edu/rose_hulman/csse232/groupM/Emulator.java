@@ -7,8 +7,10 @@ public class Emulator {
 	Register[] registers;
 	short activeSchwap;
 	Appendable console;
+	boolean halt;
 	
 	public Emulator(short sp, short pc) {
+		halt = false;
 		mem = new Memory();
 		this.registers = new Register[16];
 		for (short i = 0; i < 12; i++)
@@ -23,6 +25,8 @@ public class Emulator {
 	 * Steps the emulator. Gets instruction at pc, increments pc by 2, then runs instruction.
 	 */
 	public void step() {
+		if (halt)
+			return;
 		short pc = this.getRegister((short) 3);//pc
 		short inst = mem.getMemory(pc);
 		write("Step: $PC=%04x ==> %04x", pc, inst);
@@ -87,13 +91,19 @@ public class Emulator {
 	
 	private void syscall(short s) {
 		write("Syscall %d", s);
-		if (s == 10) { //print schwap 12
-			write("%04x\t%04x\t%04x\t%04x",
-				this.getSchwapRegister((short) 12, (short) 12),
-				this.getSchwapRegister((short) 12, (short) 13),
-				this.getSchwapRegister((short) 12, (short) 14),
-				this.getSchwapRegister((short) 12, (short) 15)
-			);
+		switch(s) {
+			case 10:
+				write("%04x\t%04x\t%04x\t%04x",
+					this.getSchwapRegister((short) 12, (short) 12),
+					this.getSchwapRegister((short) 12, (short) 13),
+					this.getSchwapRegister((short) 12, (short) 14),
+					this.getSchwapRegister((short) 12, (short) 15)
+				);
+				break;
+			case 0:
+				write("Shutdown received. Halting emulator.");
+				halt = true;
+				break;
 		}
 	}
 	
@@ -254,13 +264,8 @@ public class Emulator {
 		StringBuilder data  = new StringBuilder();
 		int pc = this.getRegister((short) 3);
 		for (int i = 0; i < lines; i++)
-			data.append(String.format("%04x\t%s%n", mem.getMemory(pc + (i*2)), disassemble(mem.getMemory(pc + (i*2)))));
+			data.append(String.format("%04x\t%s%n", mem.getMemory(pc + (i*2)), disassemble(pc + (i*2))));
 		return data.toString();
-	}
-	
-	private String disassemble(short memory) {
-		// TODO
-		return "[instruction]";
 	}
 
 	class Register {
@@ -289,5 +294,59 @@ public class Emulator {
 		public void set(short val) {registers[activeSchwap].set(val);}
 		
 	}
+	
+	public String disassemble(int addr) {
+		short prev = mem.getMemory(addr - 2);
+		short curr = mem.getMemory(addr);
+		short next = mem.getMemory(addr + 2);
+		if ((prev >> 12) == 1) // this is an immediate
+			return "<IMM>";
+		// Normal
+		String filler = null;
+		switch ((curr >> 12) & 0xF) { //opcode
+		//alu
+		case 0:		filler = "";
+		case 1: 	filler = (filler == null)?", " + Integer.toHexString(next):filler;		
+					return String.format("%s $%d, $%d%s", FunctionCodes.getByCode(curr & 0xF), (curr>>8) & 0xF, (curr>>4) & 0xF, filler);
+		// branches
+		case 2: 	filler = "beq";
+		case 3:		filler = (filler == null)?"bne":filler;
+		case 4:		filler = (filler == null)?"bgt":filler;
+		case 5:		filler = (filler == null)?"blt":filler;
+					return String.format("%s $%d, $%d, 0x%x", filler, (curr>>8) & 0xF, (curr>>4) & 0xF, curr & 0xF);
+		//mem
+		case 7:		return String.format("r $%d, 0x%x($%d)", (curr>>8) & 0xF, curr & 0xF, (curr>>4) & 0xF);
+		case 8:		return String.format("w 0x%x($%d), $%d", curr & 0xF, (curr>>8) & 0xF, (curr>>4) & 0xF);
+		//Jump register
+		case 6:		return String.format("jr 0x%x($%d)", curr & 0xFF, (curr>>8) & 0xF);
+		//H-Types
+		case 14:	filler = "rsh";
+		case 15:	filler = (filler == null)?"sudo":filler;
+					return String.format("%s %d", filler, curr & 0xF);
+		default: 	return "???";
+		}
+	}
 }
 
+enum FunctionCodes {
+	and,
+	orr, 
+	xor,
+	not,
+	tsc,
+	slt,
+	sll,
+	srl,
+	sra,
+	add,
+	sub,
+	INVALID_0xB,
+	INVALID_0xC,
+	INVALID_0xD,
+	INVALID_0xE,
+	cpy;
+	
+	public static String getByCode(int code) {
+		return FunctionCodes.values()[code].name();
+	}
+}
