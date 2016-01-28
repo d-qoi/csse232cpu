@@ -6,6 +6,9 @@
 \usepackage{makecell}
 \usepackage{listings}
 \usepackage{pdflscape}
+\usepackage{longtable}
+\usepackage{graphicx}
+\graphicspath{ {images/} }
 
 \title{Schwap CPU Design Documentation}
 \author{Charlie Fenoglio, Alexander Hirschfeld, Andrew McKee, and Wesley Van Pelt}
@@ -105,7 +108,7 @@
 				0x0 & and & \thead{Bitwise ands 2 values}\\ \hline
 			    0x1 & orr & \thead{Bitwise ors 2 values}\\ \hline
 			    0x2 & xor & \thead{Bitwise xors 2 values}\\ \hline
-			    0x3 & not & \thead{Bitwise nots 2 values}\\ \hline
+			    0x3 & not & \thead{Bitwise nots the value}\\ \hline
 			    0x4 & tsc & \thead{Converts a number to 2's compliment}\\ \hline
 			    0x5 & slt & \thead{Set less than}\\ \hline
 			    0x6 & sll & \thead{Left logical bit shift}\\ \hline
@@ -115,12 +118,14 @@
 			    0xA & sub & \thead{Subtracts 2 values}\\ \hline
 			    0xF & cpy & \thead{Copies the value in one register to another}\\ \hline
 			\end{tabular} \end{center}
-			All A-Type instructions, except for tsc, slt, and cpy, follow the syntax in the first section of the table below.  Those three can be found in the next sections.
+			All A-Type instructions, except for not, tsc, slt, and cpy, follow the syntax in the first section of the table below.  Those three can be found in the next sections.
 			\begin{center} \begin{tabular}{| c | l | c | c |} \hline
 				\thead{OP\\Code}     & Syntax                       & Meaning & Description \\ \hline
 				0x0                  & NAM [dest] [src]             & \thead{dest $=$ dest OP src} & \thead{OPs the values in registers [dest] and [src]}\\ \hline
 				\multirow{3}{*}{0x1} & NAM [dest] [src] [immediate] & \thead{src $=$ immediate \\ dest $=$ dest OP src} & \thead{Loads the immediate into the register [src] and \\ then OPs the values in registers [dest] and [src]}\\ \cline{2-4}
 				                     & NAM [dest] [immediate]       & \thead{dest $=$ dest OP immediate} & \thead{OPs the immediate and the value in the \\ register [dest]}\\ \hline \hline
+				0x0                  & not [dest]                   & \thead{dest $=$ $\sim$dest} & \thead{Bitwise nots the value in the register [dest]}\\ \hline
+				0x1                  & not [immediate]              & \thead{dest $=$ $\sim$immediate} & \thead{Bitwise nots the immediate and puts the\\result in the register [dest]}\\ \hline \hline
 				0x0                  & tsc [dest]                   & \thead{dest $=$ $\sim$dest + 1} & \thead{Converts the value in the register [dest]\\to 2's compliment}\\ \hline
 				\multirow{3}{*}{0x1} & tsc [dest] [src] [immediate] & \thead{src $=$ immediate \\ dest $=$ $\sim$src + 1} & \thead{Loads the immediate into the register [src] \\ and then converts the value in register [src] \\ to 2's compliment and stores into [dest]}\\ \cline{2-4}
 						             & tsc [dest] [immediate]       & \thead{dest $=$ $\sim$immediate + 1} & \thead{Converts the immediate to 2's compliment \\ and stores into the register [dest]}\\ \hline \hline
@@ -176,14 +181,14 @@
 				bgt  & bgt [src0] [src1] label & \thead{blt [src0] [src1] Next \\ j label \\ Next:} & \thead{Branching up or branching down \\ more than 16 instructions}\\ \hline
 				blt  & blt [src0] [src1] label & \thead{bgt [src0] [src1] Next \\ j label \\ Next:} & \thead{Branching up or branching down \\ more than 16 instructions}\\ \hline
 			\end{tabular} \end{center}
-\section{RTL}
+\section{RTL and Datapath}
 	\subsection{Components}
 		\subsubsection{Single 16-bit Register}
 			\begin{center} \begin{tabular}{| l | l | c |} \hline 
 				I/O & Name & Size \\ \hline 
 				In  & in  & 16 \\ \hline
 				Out & out & 16 \\ \hline
-				Control & writable & 1 \\ \hline
+				Control & write & 1 \\ \hline
 			\end{tabular} \end{center}
 			\begin{center} \begin{tabular}{| l | c |} \hline 
 				\multicolumn{2}{|c|}{Used as:} \\ \hline 
@@ -208,8 +213,8 @@
 				Hreg & \thead{Stores IR[3:0]} \\ \hline
 				SchLatch & \thead{Stores schwap group number} \\ \hline
 			\end{tabular} \end{center}
-		\subsubsection{SE}
-			\begin{center} Sign extends a value \end{center}
+		\subsubsection{SE$<<$1}
+			\begin{center} Sign extends and then shifts it to the left 1 \end{center}
 			\begin{center} \begin{tabular}{| l | l | c |} \hline 
 				I/O & Name & Size \\ \hline 
 				In  & in   & * \\ \hline
@@ -233,90 +238,283 @@
 				Control & op   & 4    & Operation code \\ \hline
 			\end{tabular} \end{center}
 		\subsubsection{Register File}
-			\begin{center} \begin{tabular}{| l | l | c | l |} \hline 
+			\begin{center} \begin{tabular}{| l | l | c | l |} \hline
 				I/O & Name       & Size & Description \\ \hline 
 				In  & regID0     & 4    & ID for first register \\ \hline
 				In  & regID1     & 4    & ID for second register \\ \hline
-				In  & writeData0 & 16   & Data to write to regID0 \\ \hline
-				In  & writeData1 & 16   & Data to write to regID1 \\ \hline
-				Out & reg0       & 16   & Data from regID0 \\ \hline
-				Out & reg1       & 16   & Data from regID1 \\ \hline
-				Control & writable   & 2    & If data can be written to regID1/0\\ \hline
+				In  & ImmIn0     & 16   & Data to write to regID1 \\ \hline
+				Out & regOut0    & 16   & Data from regID0 \\ \hline
+				Out & regOut1    & 16   & Data from regID1 \\ \hline
+				Control & SchLatch & 4  & The schwap group number to use\\ \hline
+				Control & RegWrite & 1  & If data can be written to regID1\\ \hline
 			\end{tabular} \end{center}
 		\subsubsection{Main Memory}
 			\begin{center} \begin{tabular}{| l | l | c | l |} \hline 
-				I/O & Name      & Size & Description \\ \hline 
-				In  & MemAddr0  & 16   & Address for data\\ \hline
-				In  & MemAddr1  & 16   & Address for data\\ \hline
-				Out & MemData0  & 16   & Data at MemAddr0 \\ \hline
-				Out & MemData1  & 16   & Data at MemAddr1 \\ \hline
-				Control & WriteData & 16   & Data to be written (at MemAddr0) \\ \hline
+				I/O & Name  & Size & Description \\ \hline 
+				In  & Addr0 & 16   & Address for data\\ \hline
+				In  & Addr1 & 16   & Address for data\\ \hline
+				In  & Store & 16   & Stores data at Addr0\\ \hline
+				Out & Out0  & 16   & Data at Addr0 \\ \hline
+				Out & Out1  & 16   & Data at Addr1 \\ \hline
+				Control & memRead  & 1 & Set to 1 when data is to be read\\ \hline
+				Control & memWrite & 1 & Set to 1 when data is to be written\\ \hline
 			\end{tabular} \end{center}
+		\subsubsection{Other Control Signals Not Listed}
+			\begin{tabular}{ r p{12cm} }
+				     PCSrc: & Where PC will get it's new value from\\
+				   PCWrite: & Set to 1 if the PC should write the data on its input\\
+				  Addr0src: & Where Addr0 will be getting its input from\\
+				  RegStore: & Where ImmIn0 will be getting its input from\\
+				       Imm: & If R1 should have an immediate loaded into it\\
+				   ALUSrc0: & Where the first input of the ALU will be coming from\\
+				   ALUSrc1: & Where the second input of the ALU will be coming from\\
+				ALUOpContr: & If the function code or ALUContr will decide the ALU op\\
+				  ALUContr: & ALU op from the control unit\\
+			\end{tabular}
 	\newpage \begin{landscape}
-	\subsection{Summary Chart}
-		\begin{center} \begin{tabular}{| c | c | c | c | c | c | c | c |} \hline
-			\multirow{2}{*}{Step} & \multirow{2}{*}{A-Type} & \multicolumn{3}{c|}{B-Type} & \multicolumn{2}{c|}{H-Type} & \multirow{2}{*}{J-Type} \\ \cline{3-7}
-			& & Branches & Read & Write & Schwap & Sudo & \\ \hline
-			\thead{Get \\ instruction} & \multicolumn{7}{c|}{\thead{IR = MEM[PC] \\ NextInst = MEM[PC+2] \\ PC += 2}} \\ \hline
-			\thead{Decode ins-\\truction and \\ get stuff from \\ registers} & \multicolumn{7}{c|}{\thead{R0 = reg\#IR[8:11] \\ if(IR[3:0]==0x1) \{R1 = NextInst; PC += 2\} else \{R1 = reg\#IR[7:4]\} \\ ALUout = PC + SE(IR[15:12]) \\ Hreg = IR[3:0]}} \\ \hline
-			\thead{Do \\ computation} & \thead{ALUout = R0 aluop R1} & \thead{PCtemp = ALUout \\ if(R0 aluop R1 == 0) \\ PC = PCtemp} & \multicolumn{2}{c|}{\thead{ALUout = R1 + SE(Hreg$<<$1)}} & \thead{SchLatch\\= Hreg} & \thead{Change on\\Code\#} & \thead{PC = R0+\\SE(IR[7:0]$<<$1)} \\ \hline
-			\thead{Output} & \thead{R0 in reg. file = ALUout} & & \thead{MemRead = MEM[ALUout]} & \thead{MEM[ALUout] \\= R0} & \multicolumn{3}{c|}{ } \\ \hline
-			\thead{Output 2} & \multicolumn{2}{c|}{ } & \thead{R0 in reg. file = MemRead} & \multicolumn{4}{c|}{ } \\ \hline
-		\end{tabular} \end{center} \end{landscape}
-	\subsection{Tests}
+	\subsection{Summary Charts}
+		\subsubsection{RTL}
+			\begin{center} \begin{tabular}{| c | c | c | c | c | c | c | c |} \hline
+				\multirow{2}{*}{Step} & \multirow{2}{*}{A-Type} & \multicolumn{3}{c|}{B-Type} & \multicolumn{2}{c|}{H-Type} & \multirow{2}{*}{J-Type} \\ \cline{3-7}
+				& & Branches & Read & Write & Schwap & Sudo & \\ \hline
+				\thead{Get \\ instruction} & \multicolumn{7}{c|}{\thead{IR = MEM[PC] \\ NextInst = MEM[PC+2] \\ PC += 2}} \\ \hline
+				\thead{Decode ins-\\truction and \\ get stuff from \\ registers} & \multicolumn{7}{c|}{\thead{R0 = reg\#IR[11:8] \\ if(IR[3:0]==0x1) \{R1 = NextInst; PC += 2\} else \{R1 = reg\#IR[7:4]\} \\ ALUout = PC + SE(IR[15:12]) \\ Hreg = IR[3:0]}} \\ \hline
+				\thead{Do \\ computation} & \thead{ALUout = R0 aluop R1} & \thead{if(R0 aluop R1 == 0) \\ PC = ALUout} & \multicolumn{2}{c|}{\thead{ALUout = R1 + SE(Hreg$<<$1)}} & \thead{SchLatch\\= Hreg} & \thead{Change on\\Code\#} & \thead{PC = R0+\\SE(IR[7:0]$<<$1)} \\ \hline
+				\thead{Output} & \thead{R0 in reg. file = ALUout} & & \thead{MemRead = MEM[ALUout]} & \thead{MEM[ALUout] = R0} & \multicolumn{3}{c|}{ } \\ \hline
+				\thead{Output 2} & \multicolumn{2}{c|}{ } & \thead{R0 in reg. file = MemRead} & \multicolumn{4}{c|}{ } \\ \hline
+			\end{tabular} \end{center}
+		\subsubsection{Datapath}
+			\begin{center}
+				\includegraphics[width=22.5cm]{datapath}
+			\end{center}
+		\end{landscape}
+	\subsection{Unit Tests and Implementation}
+		\subsubsection{Single 16-bit Registers}
+			\begin{tabular}{ r  r  p{12cm} }
+				Implementation: & \multicolumn{2}{l}{Use Micah's 16 bit register}\\
+				                &    & \\
+				         Tests: & 1. & Pass in a 16-bit value with writing enabled $\Rightarrow$ The whole value should be stored\\
+				                & 2. & Pass in a 16-bit value with writing disabled $\Rightarrow$ The none of the value should be stored\\
+			\end{tabular}
+		\subsubsection{Single 4-bit Registers}
+			\begin{tabular}{ r  r  p{12cm} }
+				Implementation: & \multicolumn{2}{l}{Use Micah's 16 bit register and change it to only hold 4 bits}\\
+				                &    & \\
+				         Tests: & 1. & Pass in a 4-bit value with writing enabled $\Rightarrow$ The whole value should be stored\\
+				                & 2. & Pass in a 4-bit value with writing disabled $\Rightarrow$ The none of the value should be stored\\
+			\end{tabular}
+		\subsubsection{SE$<<$1}
+			\begin{tabular}{ r  r  p{12cm} }
+				Implementation: & \multicolumn{2}{p{12.75cm}}{Take the input wires and move them over by one to the outputs (and setting the rightmost bit to 0).  Split the last wire to make as many more other output bits that are required.}\\
+				                &    & \\
+				         Tests: & 1. & Pass in a value which has a sign bit of 0 $\Rightarrow$ The value should be shifted to the left by one and all new bits should be 0\\
+				                & 2. & Pass in a value which has a sign bit of 1 $\Rightarrow$ The value should be shifted to the left by one and all new bits should be 1\\
+			\end{tabular}
+		\subsubsection{16-bit Adder}
+			\begin{tabular}{ r  r  p{12cm} }
+				Implementation: & \multicolumn{2}{p{12.75cm}}{Use 4 4-bit carry look ahead adders connected together like a ripple adder}\\
+				                &    & \\
+				         Tests: & 1. & Pass in 0 and 0 $\Rightarrow$ The result should be 0\\
+				                & 2. & Pass in 0xFFFF and 0x1 $\Rightarrow$ The result should be 0\\
+				                & 3. & Pass in 0x1 and 0xFFFF $\Rightarrow$ The result should be 0\\
+				                & 4. & Pass in 0xFFFF and 0xFFFF $\Rightarrow$ The result should be 0xFFFE\\
+				                & 5. & Pass in any other 2 values $\Rightarrow$ The result should be the 2 inputs added together\\
+			\end{tabular}
+		\subsubsection{ALU}
+			\begin{longtable}{ r r r p{11cm} }
+				Implementation: & \multicolumn{3}{p{12.75cm}}{Use the 16-bit adder above}\\
+				                &      &    & \\
+				         Tests: & \multicolumn{3}{p{12.75cm}}{Note:  Any time the ALU result is 0, the "zero" output should be 1, all other times it should be 0}\\
+				                & and: & 1. & Pass in 0 and 0 $\Rightarrow$ The result should be 0\\
+				                &      & 2. & Pass in 0xFFFF and 0xFFFF $\Rightarrow$ The result should be 0xFFFF\\
+				                &      & 3. & Pass in 0 and 0xFFFF $\Rightarrow$ The result should be 0\\
+				                &      & 4. & Pass in any other 2 values $\Rightarrow$ The result should be the 2 inputs anded together\\
+				                & orr: & 1. & Pass in 0 and 0 $\Rightarrow$ The result should be 0\\
+				                &      & 2. & Pass in 0xFFFF and 0xFFFF $\Rightarrow$ The result should be 0xFFFF\\
+				                &      & 3. & Pass in 0 and 0xFFFF $\Rightarrow$ The result should be 0xFFFF\\
+				                &      & 4. & Pass in any other 2 values $\Rightarrow$ The result should be the 2 inputs orred together\\
+				                & xor: & 1. & Pass in 0 and 0 $\Rightarrow$ The result should be 0\\
+				                &      & 2. & Pass in 0xFFFF and 0xFFFF $\Rightarrow$ The result should be 0\\
+				                &      & 3. & Pass in 0 and 0xFFFF $\Rightarrow$ The result should be 0xFFFF\\
+				                &      & 4. & Pass in any other 2 values $\Rightarrow$ The result should be the 2 inputs xorred together\\
+				                & not: & 1. & Pass in 0 $\Rightarrow$ The result should be 0xFFFF\\
+				                &      & 2. & Pass in 0xFFFF $\Rightarrow$ The result should be 0\\
+				                &      & 3. & Pass in any other value $\Rightarrow$ The result should be the input notted\\
+				                & tsc: & 1. & Pass in 0 $\Rightarrow$ The result should be 0\\
+				                &      & 2. & Pass in 0xFFFF $\Rightarrow$ The result should be 0x1\\
+				                &      & 3. & Pass in any other value $\Rightarrow$ The result should be the input converted to 2's compliment\\
+				                & slt: & 1. & Pass in 0 and 0 $\Rightarrow$ The result should be 0\\
+				                &      & 2. & Pass in 0xFFFF and 0xFFFF $\Rightarrow$ The result should be 0\\
+				                &      & 3. & Pass in 0xFFFF and 0 $\Rightarrow$ The result should be 0x1\\
+				                &      & 4. & Pass in 0 and 0xFFFF $\Rightarrow$ The result should be 0\\
+				                &      & 5. & Pass in 2 values such that the first is smaller than the second $\Rightarrow$ The result should be 0\\
+				                &      & 6. & Pass in 2 values such that the second is smaller than the first $\Rightarrow$ The result should be 0x1\\
+				                & sll: & 1. & Pass in 0 and 0 $\Rightarrow$ The result should be 0\\
+				                &      & 2. & Pass in 0xFFFF and 0 $\Rightarrow$ The result should be 0xFFFF\\
+				                &      & 3. & Pass in 0xFFFF and 0x1 $\Rightarrow$ The result should be 0xFFFE\\
+				                &      & 4. & Pass in 0xFFFF and 0xF $\Rightarrow$ The result should be 0x8000\\
+				                &      & 5. & Pass in 0 and 0x1 $\Rightarrow$ The result should be 0\\
+				                &      & 6. & Pass in 0 and 0xF $\Rightarrow$ The result should be 0\\
+				                &      & 7. & Pass in any other 16-bit value for the first and 4-bit value for the second $\Rightarrow$ The result should be the first input shifted to the left by the amount of the second\\
+				                & srl: & 1. & Pass in 0 and 0 $\Rightarrow$ The result should be 0\\
+				                &      & 2. & Pass in 0xFFFF and 0 $\Rightarrow$ The result should be 0xFFFF\\
+				                &      & 3. & Pass in 0xFFFF and 0x1 $\Rightarrow$ The result should be 0x7FFF\\
+				                &      & 4. & Pass in 0xFFFF and 0xF $\Rightarrow$ The result should be 0x1\\
+				                &      & 5. & Pass in 0 and 0x1 $\Rightarrow$ The result should be 0\\
+				                &      & 6. & Pass in 0 and 0xF $\Rightarrow$ The result should be 0\\
+				                &      & 7. & Pass in any other 16-bit value for the first and 4-bit value for the second $\Rightarrow$ The result should be the first input shifted to the right by the amount of the second and the new spots should be filled with 0's\\
+				                & sra: & 1. & Pass in 0 and 0 $\Rightarrow$ The result should be 0\\
+				                &      & 2. & Pass in 0xFFFF and 0 $\Rightarrow$ The result should be 0xFFFF\\
+				                &      & 3. & Pass in 0xFFFF and 0x1 $\Rightarrow$ The result should be 0xFFFF\\
+				                &      & 4. & Pass in 0xFFFF and 0xF $\Rightarrow$ The result should be 0xFFFF\\
+				                &      & 5. & Pass in 0 and 0x1 $\Rightarrow$ The result should be 0\\
+				                &      & 6. & Pass in 0 and 0xF $\Rightarrow$ The result should be 0\\
+				                &      & 7. & Pass in 0x7FFF and 0x1 $\Rightarrow$ The result should be 0x3FFF\\
+				                &      & 8. & Pass in 0x7FFF and 0xE $\Rightarrow$ The result should be 0x1\\
+				                &      & 9. & Pass in 0x7FFF and 0xF $\Rightarrow$ The result should be 0\\
+				                &      & 10.& Pass in any other 16-bit value for the first and 4-bit value for the second $\Rightarrow$ The result should be the first input shifted to the right by the amount of the second and the new spots should be filled with the leading digit\\
+				                & add: & 1. & Pass in 0 and 0 $\Rightarrow$ The result should be 0, overflow should be 0\\
+				                &      & 2. & Pass in 0xFFFF and 0x1 $\Rightarrow$ The result should be 0xFFFE, overflow should be 0\\
+				                &      & 3. & Pass in 0x1 and 0xFFFF $\Rightarrow$ The result should be 0, overflow should be 0\\
+				                &      & 4. & Pass in 0xFFFF and 0xFFFF $\Rightarrow$ The result should be 0, overflow should be 0\\
+				                &      & 5. & Pass in 0x7FFF and 0x1 $\Rightarrow$ The result should be 0x8000, overflow should be 1\\
+				                &      & 6. & Pass in 0x7FFF and 0x7FFF $\Rightarrow$ The result should be 0xFFFE, overflow should be 1\\
+				                &      & 7. & Pass in any other 2 values $\Rightarrow$ The result should be the 2 inputs added together, overflow should be 1 if there is 2's compliment overflow\\
+				                & sub: & 1. & Pass in 0 and 0 $\Rightarrow$ The result should be 0, overflow should be 0\\
+				                &      & 2. & Pass in 0xFFFF and 0x1 $\Rightarrow$ The result should be 0xFFFE, overflow should be 0\\
+				                &      & 3. & Pass in 0x1 and 0xFFFF $\Rightarrow$ The result should be 0x10, overflow should be 0\\
+				                &      & 4. & Pass in 0xFFFF and 0xFFFF $\Rightarrow$ The result should be 0, overflow should be 0\\
+				                &      & 5. & Pass in 0x8000 and 0x1 $\Rightarrow$ The result should be 0x7FFF, overflow should be 1\\
+				                &      & 6. & Pass in 0x8000 and 0x7FFF $\Rightarrow$ The result should be 0x1, overflow should be 1\\
+				                &      & 7. & Pass in any other 2 values $\Rightarrow$ The result should be the 2 inputs subtracted, overflow should be 1 if there is 2's compliment overflow\\
+				                & cpy: & 1. & Pass in 0 $\Rightarrow$ The result should be 0\\
+				                &      & 2. & Pass in 0xFFFF $\Rightarrow$ The result should be 0xFFFF\\
+				                &      & 3. & Pass in any other value $\Rightarrow$ The result should the value\\
+			\end{longtable}
+		\subsubsection{Register File}
+			\begin{tabular}{ r  r  p{12cm} }
+				Implementation: & \multicolumn{2}{p{12.75cm}}{Create one 16-bit register hard-wired to 0, 11 normal 16-bit registers, and 4 registers which go to a schwapbox.}\\
+				                &    & \\
+				         Tests: & 1. & Pass in 2 register IDs between 0 and 11 into the to regID inputs $\Rightarrow$ The result should be the values in the given registers (regOut0 has the value from regID0 and regOut1 has the value regID1)\\
+				                & 2. & Pass in 2 register IDs between 12 and 15 into the to regID inputs $\Rightarrow$ The result should be the values in the given registers (regOut0 has the value from regID0 and regOut1 has the value regID1) and use the correct schwap group\\
+				                & 3. & Pass in a number between 0 and 14 to SchLatch $\Rightarrow$ The data coming out of registers 12 - 15 should be from the schwap group number given to SchLatch\\
+				                & 4. & Pass in 15 to SchLatch $\Rightarrow$ The data coming out of registers 12 - 15 should be from the previous schwap group number given to SchLatch (if it was 2, and then changed to 5, after giving SchLatch 15 the group number should be 2 again) \\
+				                & 5. & Pass in a register ID using regID1 between 0 and 11 with a value to ImmIn0 and RegWrite set to 1 $\Rightarrow$ The result should be stored in the register given on regID1, and regID0 should be ignored\\
+				                & 6. & Pass in a register ID using regID1 between 12 and 15 with a value to ImmIn0 and RegWrite set to 1 $\Rightarrow$ The result should be stored in the register given on regID1 in the correct schwap group, and regID0 should be ignored\\
+			\end{tabular}
+		\subsubsection{Main Memory}
+			\begin{tabular}{ r  r  p{12cm} }
+				Implementation: & \multicolumn{2}{p{12.75cm}}{Use a Xilnix created memory with 2 address inputs, 2 outputs, and at least 1 write data input}\\
+				                &    & \\
+				         Tests: & 1. & Pass in 2 valid memory addresses and set the memRead to 1 $\Rightarrow$ The data in at those memory addresses should be output\\
+				                & 2. & Pass in data to Store and a valid memory address and set memWrite to 1 $\Rightarrow$ The the data from Store should have been written to memory\\
+				                & 3. & Pass in data to Store and a valid memory address and set memWrite to 0 $\Rightarrow$ The the data from Store should not have been written to memory\\
+			\end{tabular}
+	\subsection{Integration Tests}
+		\subsubsection{Get instruction}
+			\begin{tabular}{ r  p{15cm} }
+				1. & Give PC a memory address with an instruction\\
+				2. & Toggle memRead and the instruction at the given address, as well as the next instruction, should now be in IR and NextInst respectively\\
+				3. & PC should have been incremented by 2 so the process can be repeated\\
+			\end{tabular}
+		\subsubsection{Decode instruction and get stuff from registers}
+			\begin{tabular}{ r  p{15cm} }
+				1. & IR and NextInst should be populated with a current instruction and its next instruction respectively\\
+				2. & R0 should get the value from the register pointed to by IR[11:8]\\
+				3. & If IR[3:0] is 0x1 then R1 should get the value in NextInst and PC should be incremented by 2, if IR[3:0] is not 0x1 it should get the value in the register pointed to by IR[7:4]\\
+				4. & ALUout should get PC added to IR[15:12] which has been sign extended and shifted left by 1\\
+				5. & Hreg should get IR[3:0] \\
+			\end{tabular}
+		\subsubsection{Do computation}
+			\begin{tabular}{ r  r  p{12.5cm} }
+				    A-Type: & 1. & R0 and R1 should get some values, ALUop should be set to a valid ALU op code\\
+				            & 2. & ALUout should now get R0 and R1 combined in the way the function/ALU op code intended\\
+				            & 3. & This should be repeated for every valid ALU op code\\
+				            &    & \\
+				  Branches: & 1. & R0 and R1 should get some values, ALUop should be set to the subtract ALU op code\\
+				            & 2. & If ALUout is 0 then PC should now get ALUout\\
+				            &    & \\
+				Read/Write: & 1. & R1 and Hreg should be given values\\
+				            & 2. & ALUout should now contain R1 added to Hreg which has been sign extended and shifted left by 1\\
+				            &    & \\
+				    Schwap: & 1. & Hreg should be set to a valid schwap group number\\
+				            & 2. & SchLatch should now be the value in Hreg\\
+				            &    & \\
+				      Sudo: & 1. & Will vary based on code number\\
+				            &    & \\
+				    J-Type: & 1. & R0 and IR[7:0] should be set to values\\
+				            & 2. & PC should now be changed to R0 + IR[7:0] which has been sign extended and shifted to the left by 1 \\
+			\end{tabular}
+		\subsubsection{Output}
+			\begin{tabular}{ r  r  p{13cm} }
+				A-Type: & 1. & R0 should get a value, IR[11:8] should be set to a register ID\\
+				        & 2. & The value in ALUout should now be in the register which IR[11:8] was pointing to\\
+				        &    & \\
+				  Read: & 1. & ALUout should be set to a valid memory address\\
+				        & 2. & MemRead should now be set to the value in memory at the address from ALUout\\
+				        &    & \\
+				 Write: & 1. & MemRead should get a value, IR[11:8] should be set to a register ID\\\
+				        & 2. & The value which was in MemRead should now be in the register which IR[11:8] was pointing to\\
+			\end{tabular}
+		\subsubsection{Output 2}
+			\begin{tabular}{ r  r  p{13cm} }
+				Read: & 1. & ALUout should be set to a valid memory address\\
+				      & 2. & MemRead should now be set to the value in memory at the address from ALUout\\
+			\end{tabular}
+	\subsection{Plan Tests}
 		\subsubsection{A-Type}
 			\begin{tabular}{ r  r  p{12cm} }
-					No Immediate:   & 1. & Get this instruction\\
-					                & 2. & Increase PC by 2 for the next instruction\\
-					                & 3. & R0 and R1 should be loaded with the values from the first and second register in the instruction\\
-					                & 4. & The ALUout should have the value of the two values combined using the function code that was passed in\\
-					                & 5. & That value should be in the first specified register for the instruction\\ 
-					                &    & \\
-					With Immediate: & 1. & Get this and the next instruction\\
-					                & 2. & Increase PC by 2 for the next instruction\\
-					                & 3. & R0 should be loaded with the value from the first register in the instruction and R1 should have the immediate which was in NextInst, PC should have been increased by 2 again\\
-					                & 4. & The ALUout should have the value of the two values combined using the function code that was passed in\\
-					                & 5. & That value should be in the first specified register for the instruction, the immediate should also have been stored in the second register from the instruction if it was given\\
+				No Immediate:   & 1. & Get this instruction\\
+				                & 2. & Increase PC by 2 for the next instruction\\
+				                & 3. & R0 and R1 should be loaded with the values from the first and second register in the instruction\\
+				                & 4. & The ALUout should have the value of the two values combined using the function code that was passed in\\
+				                & 5. & That value should be in the first specified register for the instruction\\ 
+				                &    & \\
+				With Immediate: & 1. & Get this and the next instruction\\
+				                & 2. & Increase PC by 2 for the next instruction\\
+				                & 3. & R0 should be loaded with the value from the first register in the instruction and R1 should have the immediate which was in NextInst, PC should have been increased by 2 again\\
+				                & 4. & The ALUout should have the value of the two values combined using the function code that was passed in\\
+				                & 5. & That value should be in the first specified register for the instruction, the immediate should also have been stored in the second register from the instruction if it was given\\
 			\end{tabular}
 		\subsubsection{B-Type}
-			\begin{tabular}{ r  r  p{13cm} }
-					Branches: & 1. & Get this instruction\\
-					          & 2. & Increase PC by 2 for the next instruction\\
-					          & 3. & R0 and R1 should be loaded with the values from the first and second register in the instruction\\
-					          & 4. & The ALUout should have the new PC value for use if the branch is supposed to branch\\
-					          & 5. & ALUout should be transferred to PCtemp, the combination of R0 and R1 should be in ALUout\\
-					          & 6. & If ALUout is 0 PC should have been changed to what is in PCtemp\\
-					          &    & \\
-					Read:     & 1. & Get this instruction\\
-					          & 2. & Increase PC by 2 for the next instruction\\
-					          & 3. & R0 and R1 should be loaded with the values from the first and second register in the instruction, Hreg should have the offset from the instruction\\
-					          & 4. & The ALUout should have the value of what's in R1 added to the sign extended, shifted to the left by one value in Hreg\\
-					          & 5. & ALUout should be passed into main memory and the value at that address should be in MemRead\\
-					          & 6. & The first register specified in the instruction should have the value from memory\\
-					          &    & \\
-					Write:    & 1. & Get this instruction\\
-					          & 2. & Increase PC by 2 for the next instruction\\
-					          & 3. & R0 and R1 should be loaded with the values from the first and second register in the instruction, Hreg should have the offset from the instruction\\
-					          & 4. & The ALUout should have the value of what's in R1 added to the sign extended, shifted to the left by one value in Hreg\\
-					          & 5. & ALUout should be passed into memory as well as the value in R0, the value in R0 should be in memory at that address
-			\end{tabular}
+			\begin{longtable}{ r  r  p{13cm} }
+				Branches: & 1. & Get this instruction\\
+				          & 2. & Increase PC by 2 for the next instruction\\
+				          & 3. & R0 and R1 should be loaded with the values from the first and second register in the instruction\\
+				          & 4. & The ALUout should have the new PC value for use if the branch is supposed to branch\\
+				          & 5. & ALUout should be transferred to PCtemp, the combination of R0 and R1 should be in ALUout\\
+				          & 6. & If ALUout is 0 PC should have been changed to what is in PCtemp\\
+				          &    & \\
+				Read:     & 1. & Get this instruction\\
+				          & 2. & Increase PC by 2 for the next instruction\\
+				          & 3. & R0 and R1 should be loaded with the values from the first and second register in the instruction, Hreg should have the offset from the instruction\\
+				          & 4. & The ALUout should have the value of what's in R1 added to the sign extended, shifted to the left by one value in Hreg\\
+				          & 5. & ALUout should be passed into main memory and the value at that address should be in MemRead\\
+				          & 6. & The first register specified in the instruction should have the value from memory\\
+				          &    & \\
+				Write:    & 1. & Get this instruction\\
+				          & 2. & Increase PC by 2 for the next instruction\\
+				          & 3. & R0 and R1 should be loaded with the values from the first and second register in the instruction, Hreg should have the offset from the instruction\\
+				          & 4. & The ALUout should have the value of what's in R1 added to the sign extended, shifted to the left by one value in Hreg\\
+				          & 5. & ALUout should be passed into memory as well as the value in R0, the value in R0 should be in memory at that address
+			\end{longtable}
 		\subsubsection{H-Type}
 			\begin{tabular}{ r  r  p{12cm} }
-					Schwap: & 1. & Get this instruction\\
-					        & 2. & Increase PC by 2 for the next instruction\\
-					        & 3. & Hreg should get the schwap group number\\
-					        & 4. & SchLatch should now be set to the new schwap group number\\
-					        &    & \\
-					Sudo:   & 1. & Get this instruction\\
-					        & 2. & Increase PC by 2 for the next instruction\\
-					        & 3. & Hreg should get the sudo code number\\
-					        & 4. & The correct action should now be performed based on the code number\\
+				Schwap: & 1. & Get this instruction\\
+				        & 2. & Increase PC by 2 for the next instruction\\
+				        & 3. & Hreg should get the schwap group number\\
+				        & 4. & SchLatch should now be set to the new schwap group number\\
+				        &    & \\
+				Sudo:   & 1. & Get this instruction\\
+				        & 2. & Increase PC by 2 for the next instruction\\
+				        & 3. & Hreg should get the sudo code number\\
+				        & 4. & The correct action should now be performed based on the code number\\
 			\end{tabular}
 		\subsubsection{J-Type}
 			\begin{tabular}{ r  r  p{12cm} }
-					jr: & 1. & Get this instruction\\
-					    & 2. & Increase PC by 2 for the next instruction\\
-					    & 3. & PC should be changed to the value in R0 added to the sign extended, shifted to the left by one value in IR[7:0]\\
+				jr: & 1. & Get this instruction\\
+				    & 2. & Increase PC by 2 for the next instruction\\
+				    & 3. & PC should be changed to the value in R0 added to the sign extended, shifted to the left by one value in IR[7:0]\\
 			\end{tabular}
 \section{Assembler and Coding Practices}
 	\subsection{Assembler}
@@ -326,6 +524,7 @@
 	\subsection{Code}
 		\begin{enumerate}
 			\item Avoid branching up and more than 16 instructions down.  The hardware implementation of branching limits branching to only going down a maximum of 16 instructions, but the assembler will convert these to a combination of a branch and jump.
+			\item Schwap groups are not preserved across calls.
 		\end{enumerate}
 \section{Examples}
 	\lstset{language=sh}
