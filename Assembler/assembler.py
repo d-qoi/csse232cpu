@@ -60,6 +60,9 @@ class Assembler:
 
     PseudoList = {'jal','j','psh','pop'} # Please update and see the method
 
+    WarningList = {'$at','$at1','$pc'}
+    Warnings = []
+
     def __init__(self, progStart):
         import re
         progStart = 0
@@ -71,6 +74,9 @@ class Assembler:
         for i in inst:
             if '$' in i and not i in self.binaryMapRegs:
                 raise Exception('Register not real',i,'at line',len(self.program),'in',inst)
+            elif '$' in i and i in self.WarningList:
+                Warnings.append("Manipulating %s in line %s".format(i,inst))
+
 
 
     def readFile(self, inPath):
@@ -402,6 +408,10 @@ class Assembler:
         #self.assemble()
         self.expandSymbols()
         self.printAsm(outPath)
+        if len(self.Warnings):
+            print("Warnings:")
+            for i in self.Warnings:
+                print(i)
 
 
 if __name__ == '__main__':

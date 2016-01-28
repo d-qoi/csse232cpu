@@ -40,18 +40,15 @@ mult:				# takes two number and multiples them with multiplication
 	cpy $t0 $0
 	cpy $s0 $h0
 	cpy $s1 $h1
-	rsh 9
-	cpy $h0 $0
 loop:
 	rsh 8
 	cpy $h0 $t0
 	cpy $h1 $s0
 	jal add
 	rsh 9
-	add $t0 $h0
+	cpy $t0 $h0
 	sub $s1 1
-	beq $s1 $0 loop	#end the loop
-	and $0 $0		# no op
+	bne $s1 $0 loop
 	rsh 4
-	jr $h0			#return
+	jr $h0
 end:
