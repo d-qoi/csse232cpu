@@ -38,8 +38,8 @@ In this milestone we accomplished the following:
 	+	Created data path without control on white board
 	+	Added inputs from control elements
 	+	Copied whiteboard into FireAlpaca to make it a convenient .PNG
-*	Assembler is finished
-*	Compiler is finished
-*	Emulator has been started
+*	Assembler is working and mostly bug free
+*	Compiler is in progress
+*	Emulator is in progress
 
-We met Wednesday to work on homework and finish the assembler. A larger meeting took place Saturday to design the data path and finish up other work. Wesley finished the compiler, worked with the documentation, as well as provided markers and beautiful whiteboard drawing skills. Alex polished off the assembler. Charlie turned the data path into a useful picture, and did the journal. Andrew began progress on the emulator and is about halfway done. Alex, Charlie and Wesley designed the data path on the white board collaboratively.
+We met Wednesday to work on homework and finish the assembler. A larger meeting took place Sunday to design the data path and finish up other work. Wesley finished about half of a compiler, did the documentation and tests, as well as provided markers and beautiful whiteboard drawing skills. Alex polished off the assembler. Charlie turned the data path into a useful picture, and did the journal. Andrew began progress on the emulator and is about halfway done. Alex, Charlie and Wesley designed the data path on the white board collaboratively.
