@@ -436,9 +436,10 @@ class Assembler:
                     dest.write('0x')
                 else:
                     if line.isdigit():
-                        dest.write(hex(int(line)))
+                        #dest.write(hex(int(line)))
+                        dest.write('0x%04x'%int(line))
                     else:
-                        dest.write(line)
+                        dest.write('0x'+'0'*(4-len(line[2:]))+line[2:]);
                     dest.write('\n')
                     continue
                 for inst in line:
