@@ -75,9 +75,8 @@ class Assembler:
             if '$' in i and not i in self.binaryMapRegs:
                 raise Exception('Register not real',i,'at line',len(self.program),'in',inst)
             elif '$' in i and i in self.WarningList:
-                Warnings.append("Manipulating %s in line %s".format(i,inst))
-
-
+                self.Warnings.append("Manipulating {0} on line {1} @ {2}".format(i,len(self.program), inst))
+                # the line wasn't added yet so len and not len-1
 
     def readFile(self, inPath):
         # This cannot be a file read in, it must be a list to pass
@@ -87,7 +86,6 @@ class Assembler:
                 instruction = instruction.strip().lower()
                 if instruction is '': #empty line?
                     continue
-
 
                 if '#' in instruction: #cutting out comments
                     instruction = instruction[0:instruction.index('#')] 
@@ -119,11 +117,10 @@ class Assembler:
                 # If I were to continue reading from the file, then things would go badly,
                 # in this case, we can just append to the Program and let the following code take care of converting the extended program into binary/hex
 
-
                 self.programCounter += 1
                 #debugging
                 if self.debug:
-                    print(self.program)
+                    print(self.program[-1])
                     print(self.programCounter, str(len(self.program)))
 
 
@@ -177,7 +174,30 @@ class Assembler:
         if self.debug:
             temp = self.program[i]
         sym = self.program[i][2]
-        offset = str(self.symbolDef[sym])
+        # updating branching and JAL code
+        #branching
+        if self.debug and i > 3:
+            print(self.program[i-3])
+            print(self.program[i-2])
+            print(self.program[i-1])
+            print(self.program[i])
+            
+        if (i > 1 and
+            self.program[i-1][0] in [self.binaryMapInst['beq'],
+                                    self.binaryMapInst['bne'],
+                                    self.binaryMapInst['bgt'],
+                                    self.binaryMapInst['blt']] and 
+            self.program[i-1][3] == 1):
+            self.program[i-1][3] = 2
+        #jumping
+        elif (i > 3 and
+              self.program[i-3] == [0x1,0x5,0x0,0xf] and
+              self.program[i-2] == '0x6' and
+              self.program[i-1] == [0x0,0x5,0x3,0x9]):
+            self.program[i-2] = '0x8'
+
+
+        offset = str(self.symbolDef[sym] + self.progStart)
         if self.debug:
             print('jump to',sym,'being converted to big jump')
         self.program.insert(i,['cpy','$a1',offset])
@@ -185,6 +205,12 @@ class Assembler:
 
         if self.debug:
             print(temp,"became:\n",self.program[i],'\n',self.program[i+1])
+
+        if self.debug and i > 3:
+            print(self.program[i-3])
+            print(self.program[i-2])
+            print(self.program[i-1])
+            print(self.program[i])
 
 
     def symToOffset(self, sym, line):
@@ -238,9 +264,17 @@ class Assembler:
                 else:
                     self.program[self.programCounter][2] = self.toHexSigned(offset)
 
+            #elif:
+             #   for i in self.program[self.programCounter]:
+              #      if (i not in self.binaryMapInst and 
+               #         i not in self.binaryMapRegs and 
+                #        and i in self.symbolDef):
+
+
             self.assembleCurrentLine() #trying this here
 
             self.programCounter += 1 #NOT MISSING THIS AGAIN
+
 
     def pseudoExpandHelper(self, inst): #less Hacky bullshit
     #I can make this work maybe
@@ -253,10 +287,16 @@ class Assembler:
             print(inst,'=>')
         if 'j' in inst:
             out = [['jr','$pc',inst[1]]]
-        elif 'jal' in inst:
+#        elif ('jal' in inst and self.symToOffset(inst[i],self.programCounter) < 100)
+#             and self.symToOffset(inst[i],self.programCounter) > -110):
+        elif 'jal' in inst :
             out = [['cpy','$ra','6'],
                 ['add','$ra','$pc'],
                 ['jr','$pc',inst[1]]]
+#        elif 'jal' in inst:
+#            out = [['cpy','$ra','8'],
+#                ['add','$ra','$pc'],
+#                ['jr','$pc',inst[1]]]
         elif 'psh' in inst:
             out = [['sub','$sp','2'],
                     ['w','0','$sp',inst[1]]]
@@ -283,6 +323,13 @@ class Assembler:
                 self.pseudoExpandHelper(self.program[self.programCounter])
 
             self.programCounter += 1
+
+#    def assemble(self):
+#        self.programCounter = 0;
+#        while self.programCounter<len(self.program):
+#            self.assembleCurrentLine()
+#            self.programCounter += 1
+
 
 # Different types of instructions, may need to change later.
 # If this is changed remember to change the list of instructions at the top
@@ -380,10 +427,10 @@ class Assembler:
 
     def printAsm(self, outFile):
         with open(outFile, 'w') as dest:
-            dest.write("""Version 1.02
-
-
-""")
+#            dest.write("""Version 1.3
+#
+#
+#""")
             for line in self.program:
                 if not isinstance(line, str):
                     dest.write('0x')
@@ -407,6 +454,7 @@ class Assembler:
         self.expandPseudo()
         #self.assemble()
         self.expandSymbols()
+        #self.assemble()
         self.printAsm(outPath)
         if len(self.Warnings):
             print("Warnings:")
@@ -422,15 +470,20 @@ if __name__ == '__main__':
     helpPrint = """
 
 The use of this program:
-assembler infile.asm <outfile.bin> <debug>
--h:     Prints this message
+assembler infile.asm <outfile.bin> <Program Start offset> <debug>
+-h or help:     Prints this message
 
 if the outfile is not specified, it will write to out.bin
 if 'debug'(all lower) is passed anywhere, it will toggle debugging mode
 
+if an integer is passed, it will offset the program counter so that all direct jumps
+are recorded accurately
+
+Version 1.03
+
 """
 
-    if '-h' in sys.argv:
+    if '-h' in sys.argv or 'help' in sys.argv:
         print(helpPrint) 
         sys.exit(0)
 
@@ -444,6 +497,8 @@ if 'debug'(all lower) is passed anywhere, it will toggle debugging mode
             inFile = arg
         elif '.bin' in arg:
             outFile = arg
+        elif arg.isdigit():
+            asm.progStart = int(arg)
 
     if inFile is '':
         print(helpPrint)
