@@ -278,7 +278,7 @@
 				\multirow{2}{*}{Step} & \multirow{2}{*}{A-Type} & \multicolumn{3}{c|}{B-Type} & \multicolumn{2}{c|}{H-Type} & \multirow{2}{*}{J-Type} \\ \cline{3-7}
 				& & Branches & Read & Write & Schwap & Sudo & \\ \hline
 				\thead{Get \\ instruction} & \multicolumn{7}{c|}{\thead{IR = MEM[PC] \\ NextInst = MEM[PC+2] \\ PC += 2}} \\ \hline
-				\thead{Decode ins-\\truction and \\ get stuff from \\ registers} & \multicolumn{7}{c|}{\thead{R0 = reg\#IR[8:11] \\ if(IR[3:0]==0x1) \{R1 = NextInst; PC += 2\} else \{R1 = reg\#IR[7:4]\} \\ ALUout = PC + SE(IR[15:12]) \\ Hreg = IR[3:0]}} \\ \hline
+				\thead{Decode ins-\\truction and \\ get stuff from \\ registers} & \multicolumn{7}{c|}{\thead{R0 = reg\#IR[11:8] \\ if(IR[3:0]==0x1) \{R1 = NextInst; PC += 2\} else \{R1 = reg\#IR[7:4]\} \\ ALUout = PC + SE(IR[15:12]) \\ Hreg = IR[3:0]}} \\ \hline
 				\thead{Do \\ computation} & \thead{ALUout = R0 aluop R1} & \thead{if(R0 aluop R1 == 0) \\ PC = ALUout} & \multicolumn{2}{c|}{\thead{ALUout = R1 + SE(Hreg$<<$1)}} & \thead{SchLatch\\= Hreg} & \thead{Change on\\Code\#} & \thead{PC = R0+\\SE(IR[7:0]$<<$1)} \\ \hline
 				\thead{Output} & \thead{R0 in reg. file = ALUout} & & \thead{MemRead = MEM[ALUout]} & \thead{MEM[ALUout] = R0} & \multicolumn{3}{c|}{ } \\ \hline
 				\thead{Output 2} & \multicolumn{2}{c|}{ } & \thead{R0 in reg. file = MemRead} & \multicolumn{4}{c|}{ } \\ \hline
@@ -322,7 +322,7 @@
 			\end{tabular}
 		\subsubsection{ALU}
 			\begin{longtable}{ r r r p{11cm} }
-				Implementation: & \multicolumn{3}{p{12.75cm}}{\#TODO}\\ % ---------------- TODO ----------------
+				Implementation: & \multicolumn{3}{p{12.75cm}}{Use the 16-bit adder above}\\
 				                &      &    & \\
 				         Tests: & \multicolumn{3}{p{12.75cm}}{Note:  Any time the ALU result is 0, the "zero" output should be 1, all other times it should be 0}\\
 				                & and: & 1. & Pass in 0 and 0 $\Rightarrow$ The result should be 0\\
@@ -411,6 +411,56 @@
 				                & 3. & Pass in data to Store and a valid memory address and set memWrite to 0 $\Rightarrow$ The the data from Store should not have been written to memory\\
 			\end{tabular}
 	\subsection{Integration Tests}
+		\subsubsection{Get instruction}
+			\begin{tabular}{ r  p{15cm} }
+				1. & Give PC a memory address with an instruction\\
+				2. & Toggle memRead and the instruction at the given address, as well as the next instruction, should now be in IR and NextInst respectively\\
+				3. & PC should have been incremented by 2 so the process can be repeated\\
+			\end{tabular}
+		\subsubsection{Decode instruction and get stuff from registers}
+			\begin{tabular}{ r  p{15cm} }
+				1. & IR and NextInst should be populated with a current instruction and its next instruction respectively\\
+				2. & R0 should get the value from the register pointed to by IR[11:8]\\
+				3. & If IR[3:0] is 0x1 then R1 should get the value in NextInst and PC should be incremented by 2, if IR[3:0] is not 0x1 it should get the value in the register pointed to by IR[7:4]\\
+				4. & ALUout should get PC added to IR[15:12] which has been sign extended and shifted left by 1\\
+				5. & Hreg should get IR[3:0] \\
+			\end{tabular}
+		\subsubsection{Do computation}
+			\begin{tabular}{ r  r  p{12.5cm} }
+				    A-Type: & 1. & R0 and R1 should get some values, ALUop should be set to a valid ALU op code\\
+				            & 2. & ALUout should now get R0 and R1 combined in the way the function/ALU op code intended\\
+				            & 3. & This should be repeated for every valid ALU op code\\
+				            &    & \\
+				  Branches: & 1. & R0 and R1 should get some values, ALUop should be set to the subtract ALU op code\\
+				            & 2. & If ALUout is 0 then PC should now get ALUout\\
+				            &    & \\
+				Read/Write: & 1. & R1 and Hreg should be given values\\
+				            & 2. & ALUout should now contain R1 added to Hreg which has been sign extended and shifted left by 1\\
+				            &    & \\
+				    Schwap: & 1. & Hreg should be set to a valid schwap group number\\
+				            & 2. & SchLatch should now be the value in Hreg\\
+				            &    & \\
+				      Sudo: & 1. & Will vary based on code number\\
+				            &    & \\
+				    J-Type: & 1. & R0 and IR[7:0] should be set to values\\
+				            & 2. & PC should now be changed to R0 + IR[7:0] which has been sign extended and shifted to the left by 1 \\
+			\end{tabular}
+		\subsubsection{Output}
+			\begin{tabular}{ r  r  p{13cm} }
+				A-Type: & 1. & R0 should get a value, IR[11:8] should be set to a register ID\\
+				        & 2. & The value in ALUout should now be in the register which IR[11:8] was pointing to\\
+				        &    & \\
+				  Read: & 1. & ALUout should be set to a valid memory address\\
+				        & 2. & MemRead should now be set to the value in memory at the address from ALUout\\
+				        &    & \\
+				 Write: & 1. & MemRead should get a value, IR[11:8] should be set to a register ID\\\
+				        & 2. & The value which was in MemRead should now be in the register which IR[11:8] was pointing to\\
+			\end{tabular}
+		\subsubsection{Output 2}
+			\begin{tabular}{ r  r  p{13cm} }
+				Read: & 1. & ALUout should be set to a valid memory address\\
+				      & 2. & MemRead should now be set to the value in memory at the address from ALUout\\
+			\end{tabular}
 	\subsection{Plan Tests}
 		\subsubsection{A-Type}
 			\begin{tabular}{ r  r  p{12cm} }
