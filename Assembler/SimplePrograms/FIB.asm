@@ -21,5 +21,7 @@ end:
 	not $s0 $0
 	sudo 10
 	blt $h0 $s1 start
+	
+	sudo 0
 
 done:

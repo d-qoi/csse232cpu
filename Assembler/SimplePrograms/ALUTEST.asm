@@ -57,3 +57,5 @@ cpy $s0 $0
 add $s0 $t0
 sub $s0 $t1
 # should be 3
+
+sudo 0
