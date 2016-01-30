@@ -3,16 +3,21 @@ package edu.rose_hulman.csse232.groupM;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -23,6 +28,8 @@ import javax.swing.JSeparator;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 public class MainFrame extends JFrame {
 	private static final long serialVersionUID = -5979979493835436236L;
@@ -44,6 +51,12 @@ public class MainFrame extends JFrame {
 		MainFrame selfRef = this;
 		emu = new Emulator(DEFAULT_SP, DEFAULT_PC);
 		emu.setConsoleStream(new ConsoleStream());
+		try {
+		    setIconImage(ImageIO.read(new File("cpu.gif")));
+		}
+		catch (IOException exc) {
+		    exc.printStackTrace();
+		}
 		this.setLayout(new BorderLayout());
 		JPanel buttonsPanel = new JPanel();
 		JButton reset = new JButton("Reset");
@@ -51,6 +64,9 @@ public class MainFrame extends JFrame {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				emu.write("Reset emulator!");
+				for (short i = 0; i < 16; i++) {
+					emu.setRegister(i, (short) 0);
+				}
 				emu.setRegister((short) 3, DEFAULT_PC);
 				emu.setRegister((short) 4, DEFAULT_SP);
 				emu.mem.clear();
@@ -72,8 +88,12 @@ public class MainFrame extends JFrame {
 						Scanner sc = new Scanner(chooser.getSelectedFile());
 						ArrayList<String> al = new ArrayList<String>();
 						al.add("#" + Integer.toHexString(MainFrame.DEFAULT_PC));
+						String str;
 						while (sc.hasNextLine())
-							al.add(sc.nextLine());
+							if (!(str=sc.nextLine().trim()).equals("") && str.startsWith("0x"))
+								al.add(str);
+						if (al.get(1).startsWith("#")) // PC provided in file
+							al.remove(0); // Remove default PC point
 						String[] arr = new String[0];
 						arr = al.toArray(arr);
 						sc.close();
@@ -97,6 +117,16 @@ public class MainFrame extends JFrame {
 		});
 		buttonsPanel.add(load);
 		buttonsPanel.add(step);
+		JButton clear = new JButton("Clear");
+		clear.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				selfRef.console.setText("");
+				emu.write("Console cleared!");
+				selfRef.update();
+			}
+		});
+		buttonsPanel.add(clear);
 		this.add(buttonsPanel, BorderLayout.NORTH);
 		JSplitPane main = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
 		JPanel registerPanel = new JPanel(new BorderLayout());
@@ -107,10 +137,13 @@ public class MainFrame extends JFrame {
 		leftPanel.add(scroll = new JScrollPane(console = new JTextArea()));
 		console.setEditable(false);
 		console.setForeground(Color.RED);
+		console.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
 		scroll.setPreferredSize(new Dimension(600, 200));
 		JSplitPane mem = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
 		mem.add(instructionMem = new JTextArea());
-		mem.add(dataMem = new JTextArea());		
+		mem.add(dataMem = new JTextArea());	
+		instructionMem.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+		dataMem.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
 		leftPanel.add(mem);
 		main.add(leftPanel);
 		instructionMem.setEditable(false);
@@ -122,12 +155,10 @@ public class MainFrame extends JFrame {
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.setVisible(true);
 		emu.write("Initialized emulator @ $SP=%04x, $PC=%04x", emu.getRegister((short) 4), emu.getRegister((short) 3));
-		emu.write("NOTE: Currently the scroll bar doesn't work/exist. This will be fixed.");
-		emu.write("For **magical** reasons, a \"not\" with an immediate does not work (yet).");
-		emu.write("In the machine code file you load, 1 instruction per line in form 0x[Hex value]");
-		emu.write("Empty lines are bad.");
-		emu.write("If you don't, it will freak out and probably not work.");
-		emu.write("Syscall 10 => print schwap. Syscall 0 ==> exit (not yet impl)");
+		emu.write("NOTE:\tThe machine code file should have 1 instruction per line in form 0x[Hex value]");
+		emu.write("\tInvalid and empty lines will be ignored.");
+		emu.write("\tStarting the file with #[Hex value], will load the program into the specified hex address");
+		emu.write("Syscall 10 => print\nSyscall 0 ==> exit");
 	}
 	
 	/**
@@ -162,12 +193,15 @@ public class MainFrame extends JFrame {
 			RegisterName[] names = RegisterName.values();
 			GridBagConstraints c = new GridBagConstraints();
 			registers = new JTextField[names.length];
+			JLabel label;
 			for (c.gridy = 0; c.gridy < names.length; c.gridy++) {
+				label = new JLabel(names[c.gridy].name());
+				label.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
 				c.gridx = 0;
 				c.weightx = 0.5;
 				c.anchor = GridBagConstraints.LINE_START;
 				c.fill = GridBagConstraints.NONE;
-				this.add(new JLabel(names[c.gridy].name()), c);
+				this.add(label, c);
 				c.gridx = 1;
 				c.weightx = 1;
 				c.anchor = GridBagConstraints.LINE_END;
@@ -223,15 +257,19 @@ public class MainFrame extends JFrame {
 			top.add(l, BorderLayout.WEST);
 			top.add(r, BorderLayout.EAST);
 			top.add(schwapLabel = new JLabel(getSwapString()), BorderLayout.CENTER);
+			schwapLabel.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
 			this.add(top, BorderLayout.NORTH);
 			JPanel regs = new JPanel(new GridBagLayout());
 			GridBagConstraints c = new GridBagConstraints();
+			JLabel label;
 			for (c.gridy = 0; c.gridy < 4; c.gridy++) {
 				c.gridx = 0;
 				c.weightx = 0.5;
 				c.anchor = GridBagConstraints.LINE_START;
 				c.fill = GridBagConstraints.NONE;
-				regs.add(new JLabel("$h" + c.gridy), c);
+				label = new JLabel("$h" + c.gridy);
+				label.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+				regs.add(label, c);
 				c.gridx = 1;
 				c.weightx = 1;
 				c.anchor = GridBagConstraints.LINE_END;

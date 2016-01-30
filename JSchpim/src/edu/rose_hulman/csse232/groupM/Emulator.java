@@ -245,8 +245,8 @@ public class Emulator {
 		StringBuilder sb = new StringBuilder();
 		for (short l = 0; l < lines; l++) {
 			short[] ln = this.mem.getMemoryBlock(base - (l * 4), 4);
-			sb.append(String.format("%04X:\t", base - (l * 4)));
-			for (short i = 0; i < 4; i++) {
+			sb.append(String.format("%04X:\t", (short) (base - (l * 16))));
+			for (short i = 3; i >= 0; i--) {
 				sb.append(String.format("%04x ", ln[i]));
 			}
 			if (l+1 != lines)
@@ -276,8 +276,7 @@ public class Emulator {
 		public short get() {return value;}
 	}
 
-	
-	// TODO Schwap 0xf
+
 	class SchwapRegister extends Register {
 		Register[] registers;
 		
