@@ -3,7 +3,6 @@ class Assembler:
 
     debug = False
     progStart = 0
-    symOff = -1 #Trust me it works
     program = []
 
     binaryMapInst = {'and':0x0, 
@@ -195,6 +194,10 @@ class Assembler:
 
 
     def pseudoExpandHelper(self, inst, pos):
+        # New way to handle these
+        # just make sure it is a string, seperate things by new lines
+        # check below for examples, it workes rather well 
+        # use formatting and % to insert things into the strings, examples shown below
         if self.debug:
             print(inst,'=>')
         if 'j' in inst:
@@ -206,7 +209,7 @@ class Assembler:
             jr $pc %s'''%inst[1]
 
         elif 'psh' in inst:
-            out = '''sum $sp 2
+            out = '''sub $sp 2
             w 0($sp) %s'''%inst[1]
 
         elif 'pop' in inst:
@@ -228,15 +231,146 @@ class Assembler:
             if self.program[programCounter][0][0] in self.PseudoList:
                 self.pseudoExpandHelper(self.program[programCounter][0], programCounter)
 
-
-
+            # for adding the immediates after the add, Probably don't need to do this here, but I am regardkess because idk, why not?
             if self.program[programCounter][0][0] in self.ATypeList:
                 if not self.program[programCounter][0][2] in self.binaryMapRegs or len(self.program[programCounter][0]) is 4:
                     imm = int(self.program[programCounter][0][-1])
+                    # this is adding in the immediate lines, this should be the case for ALL immeadiates that are passed to the assembler by the programmer.
                     self.program.insert(programCounter+1,[['imm'],'0x%04x'%imm,''])
 
-
             programCounter += 1 # Still not missing this
+
+
+    def createTempSymbolDict(self):
+        out = {}
+        for line in range(0,len(self.program)):
+            sym = self.program[line][2]
+            if sym: #pulling the immediate, if there is one, add it
+                out[sym] = line
+        return out
+
+    def branchToJump(self, line):
+        oldLine = self.program[line]
+        if self.debug:
+            print(oldLine[0], 'became:')
+        jump = [['jr','$pc',oldLine[0][3]],'','']
+        oldLine[0][3] = '1'
+        if oldLine[0][0] == 'beq':
+            oldLine[0][0] = 'bne'
+        elif oldLine[0][0] == 'bne':
+            oldLine[0][0] = 'beq'
+        elif oldLine[0][0] == 'bgt':
+            oldLine[0][0] = 'blt'
+        elif oldLine[0][0] == 'blt':
+            oldLine[0][0] = 'bgt'
+        self.program.insert(line+1,jump)
+        
+        if self.debug:
+            print(self.program[line],'\n',self.program[line+1])
+
+    def jumpToBigJump(self, line):
+        oldLine = self.program[line]
+        sym = oldLine[0][2]
+        if self.debug:
+            print("converting %s to:"%oldLine[0])
+        # updating branches
+        if (line > 1 and
+            self.program[line-1][0][0] in {'beq','bne','bgt','blt'} and
+            self.program[line-1][0][3] == '1'):
+
+            self.program[line-1][0][3] = '2'
+        # updating jal
+        elif (line > 3 and
+            self.program[line-3][0] == ['cpy','$ra','6'] and
+            self.program[line-1][0] == ['add','$ra','$pc']):
+
+            self.program[line-3][0] = ['cpy','$ra','8'] #should either be 8 or A
+            self.program[line-2][1] = ['0x0008']
+
+        self.program.insert(line,[['imm'],oldLine[2],'']) #inserting the target for the Copy
+        self.program.insert(line,[['cpy','$a1','0'],'','']) # 0 to make sure it loads the immediate
+        oldLine[0] = ['jr','$a1','0']
+        
+        if self.debug:
+            print("%s\n%s\n%s"%self.program[line-2],self.program[line-1], self.program[line])
+
+
+    # this is not assembling the code, it is just making sure symbols line up.
+    def convert(self):
+        programCounter = 0
+        changeCount = 0 #did anything change, will loop this till this remains zero
+        symDict = self.createTempSymbolDict()
+
+        # commonly used, so I am putting it here.
+        def getSymOffset(sym):
+            return symDict[sym] - programCounter - 1
+
+        while programCounter < len(self.program):
+            line = self.program[programCounter] 
+            #skipping things that don't change
+            # ALU codes, sudo, rsh, and r and w
+            if line[0][0] in self.ATypeList|self.HTypeList|{'r','w'}:
+                programCounter += 1
+                continue
+        # Branching and jumping remain
+            # branching and is there actually a symbol
+            if line[0][0] in self.BTypeList and line[0][3] in symDict: 
+                offset = getSymOffset(line[0][3])
+                if offset > 15 or offset < 0:
+                    changeCount += 1
+                    self.branchToJump(programCounter)
+            # jump and jumbol checking
+            elif line[0][0] in self.JTypeList and line[0][2] in symDict:
+                offset = getSymOffset(line[0][2])
+                if offset > 127 or offset < -128:
+                    changeCount += 1
+                    self.jumpToBigJump(programCounter)                
+
+            programCounter += 1
+
+        return changeCount
+
+    def AType(self, line):
+        inst = self.program[line]
+        if len(inst[0]) == 3:
+            if '$' in inst[0][1] and '$' in inst[0][2]:
+                self.program[line][1] = ('0x' + hex(0) +
+                                        hex(self.binaryMapRegs[inst[0][1]])[2:] +
+                                        hex(self.binaryMapRegs[inst[0][2]])[2:] + 
+                                        hex(self.binaryMapInst[inst[0][3]])[2:])
+            elif:
+                self.program[line][1] = ('0x' + hex(1) +
+                                        hex(self.binaryMapRegs[inst[0][1]])[2:] +
+                                        hex(self.binaryMapRegs['$0'])[2:] + 
+                                        hex(self.binaryMapInst[inst[0][3]])[2:])
+        elif len(inst[0]) == 4:
+            self.program[line][1] = ('0x' + hex(1) +
+                                    hex(self.binaryMapRegs[inst[0][1]])[2:] +
+                                    hex(self.binaryMapRegs[inst[0][2]])[2:] + 
+                                    hex(self.binaryMapInst[inst[0][3]])[2:])
+
+    def BType(self):
+        
+
+
+    def assemble(self):
+        symDict = self.createTempSymbolDict()
+        programCounter = 0;
+        while programCounter < len(self.program):
+            if self.program[programCounter][0][0] in self.ATypeList:
+                self.AType(programCounter)
+            elif self.program[programCounter][0][0] in self.BTypeList:
+                self.BType(programCounter)
+            elif self.program[programCounter][0][0] in self.HTypeList:
+                self.HType(programCounter)
+            elif self.program[programCounter][0][0] in self.JTypeList:
+                self.JType(programCounter)
+            elif self.program[programCounter][0][0] == 'imm'
+                if self.program[programCounter][1] in symDict:
+                    self.program[programCounter][1] = '0x%04x'%line[1]
+            if self.debug:
+                print(self.program[self.programCounter])
+
 
     def debugPrintAll(self):
         for line in self.program:
@@ -246,7 +380,10 @@ class Assembler:
         self.readFile(inFile)
         self.expandPseudoInst()
         self.debugPrintAll()
-
+        while self.convert() != 0:
+            pass
+        self.assemble()
+        
 
 
 if __name__ == '__main__':
@@ -274,8 +411,9 @@ Version 1.04
         print(helpPrint) 
         sys.exit(0)
 
-    sys.argv = ["SimplePrograms\SIMPLEPROCEDURES.asm" ,"SimplePrograms\out\SIMPLEPROCEDURES.bin", "4096","debug"]
-
+    #sys.argv = ["SimplePrograms\SIMPLEPROCEDURES.asm" ,"SimplePrograms\out\SIMPLEPROCEDURES.bin", "4096","debug"]
+    sys.argv = ['Tests.asm','debug']
+    
     inFile = ''
     outFile = 'out.bin'
     asm = Assembler(0)

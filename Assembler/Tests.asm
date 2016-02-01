@@ -7,10 +7,10 @@ beq $t0 $0 test3
 
 
 r $t1 0($t1) 
-#should become 0x7990
+# should become 0x7990
 
 add $t1 $t2 15 
-#should become 
+# should become 
 # 0x19A9
 # 0xF
 
