@@ -197,6 +197,7 @@ class Assembler:
 
         offset = str(self.symbolDef[sym]*2 + self.progStart) # This is the only place progStart comes into play
         if self.debug:
+            print(offset)
             print('jump to',sym,'being converted to big jump') # come up with better name 
         self.program.insert(i,['cpy','$a1',offset]) # this is not PC relative, so PC doesn't matter
         self.program[i+1] = ['jr','$a1','0']
@@ -307,6 +308,10 @@ class Assembler:
         while self.programCounter < len(self.program): #really important that this is not a for loop
             if self.program[self.programCounter][0] in self.PseudoList:
                 self.pseudoExpandHelper(self.program[self.programCounter])
+            if self.program[self.programCounter][0] in ['and','orr','xor','not','tsc','slt','sgt','sll','srl','sra','add','sub','cpy']:
+                if not self.program[self.programCounter][2] in self.binaryMapRegs or len(self.program[self.programCounter]) is 4:
+                     self.updateSymbols(self.programCounter, 1)
+
 
             self.programCounter += 1 # Still not missing this
 
@@ -331,7 +336,7 @@ class Assembler:
             else:
                 self.program.insert(self.programCounter + 1, hex(int(inst[2]) & 0xFFFF))
             self.programCounter += 1 #because I am inserting the immediate, the PC needs to be increased
-            self.updateSymbols(self.programCounter, 1)
+            #self.updateSymbols(self.programCounter, 1)
         else: # case for which we are loading an immediate into the second source on the same line
             out[0] = 0x1 
             out[1] = self.binaryMapRegs[inst[1]]
@@ -343,7 +348,7 @@ class Assembler:
             else:
                 self.program.insert(self.programCounter + 1, hex(int(inst[3]) & 0xFFFF))
             self.programCounter += 1 # because I am inserting the PC, the immeadiate needs to be increased
-            self.updateSymbols(self.programCounter, 1)
+            #self.updateSymbols(self.programCounter, 1)
 
             #read 
             # r d o(s)
