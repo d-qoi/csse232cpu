@@ -70,6 +70,7 @@ class Assembler:
         progStart = 0
         self.progStart = progStart
 
+
     def checkInst(self, inst):
         if not inst[0] in self.binaryMapInst.keys()|self.PseudoList:
             raise Exception('Instruction not in instructions', inst[0])
@@ -79,6 +80,7 @@ class Assembler:
             elif '$' in i and i in self.WarningList:
                 self.Warnings.append("Manipulating {0} on line {1} @ {2}".format(i,len(self.program), inst))
                 # the line wasn't added yet so len and not len-1
+
 
     def readFile(self, inPath):
         # This cannot be a file read in, it must be a list to pass
@@ -125,12 +127,86 @@ class Assembler:
                     print(self.programCounter, str(len(self.program)))
 
 
-    # for updating things after expanding with pseudo instructions
-    def updateSymbols(self, line, offset):
-        for sym, val in self.symbolDef.items():
-            if val > line:
-                self.symbolDef[sym] += offset
+# Different types of instructions, may need to change later.
+# If this is changed remember to change the list of instructions at the top
+    def AType(self, inst):
+        out = [0x0,'','','']
+        if '$' in inst[1] and '$' in inst[2] and len(inst) is 3: # two registers
+            out[1] = self.binaryMapRegs[inst[1]]
+            out[2] = self.binaryMapRegs[inst[2]]
+            out[3] = self.binaryMapInst[inst[0]]
+            self.program[self.programCounter] = out
+        elif len(inst) is 3:
+            out[0] = 0x1
+            out[1] = self.binaryMapRegs[inst[1]]
+            out[2] = self.binaryMapRegs['$zz']
+            out[3] = self.binaryMapInst[inst[0]]
+            self.program[self.programCounter] = out
+            if '0x' in inst[2]:
+                self.program.insert(self.programCounter + 1, inst[2][2:])
+            else:
+                self.program.insert(self.programCounter + 1, hex(int(inst[2]) & 0xFFFF))
+            self.programCounter += 1 #because I am inserting the immediate, the PC needs to be increased
+            #self.updateSymbols(self.programCounter, 1)
+        else: # case for which we are loading an immediate into the second source on the same line
+            out[0] = 0x1 
+            out[1] = self.binaryMapRegs[inst[1]]
+            out[2] = self.binaryMapRegs[inst[2]]
+            out[3] = self.binaryMapInst[inst[0]]
+            self.program[self.programCounter] = out 
+            if '0x' in inst[2]:
+                self.program.insert(self.programCounter + 1, inst[2][2:])
+            else:
+                self.program.insert(self.programCounter + 1, hex(int(inst[3]) & 0xFFFF))
+            self.programCounter += 1 # because I am inserting the PC, the immeadiate needs to be increased
+            #self.updateSymbols(self.programCounter, 1)
 
+            #read 
+            # r d o(s)
+            # r d s o
+
+            # write
+            # w o(d) s
+            # w d s o
+    def BType(self, inst):
+        out = ['','','','']
+        if inst[0] in ['r','w']:
+            out[0] = self.binaryMapInst[inst[0]]
+            if inst[0] is 'r':
+                out[1] = self.binaryMapRegs[inst[1]] #setting destination
+                out[2] = self.binaryMapRegs[inst[3]] #setting source
+                out[3] = inst[2]
+            else:
+                out[1] = self.binaryMapRegs[inst[3]] #setting dest
+                out[2] = self.binaryMapRegs[inst[2]] #setting srouce
+                out[3] = inst[1]
+        else: #Handeling Branches
+            out[0] = self.binaryMapInst[inst[0]]
+            out[1] = self.binaryMapRegs[inst[1]]
+            out[2] = self.binaryMapRegs[inst[2]]
+            out[3] = inst[3]
+        self.program[self.programCounter] = out
+
+    def HType(self, inst):
+        out = ['',0x0,0x0,'']
+        out[0] = self.binaryMapInst[inst[0]]
+        out[3] = (int(inst[1]))
+        self.program[self.programCounter] = out
+
+    def JType(self, inst):
+        out = ['','','']
+        if len(inst) is 2:
+            inst = inst + ['0']
+        out[0] = self.binaryMapInst[inst[0]]
+        if '$' in inst[1]: 
+            out[1] = self.binaryMapRegs[inst[1]]
+            out[2] = inst[2]
+        elif '$' in inst[2]:
+            out[1] = self.binaryMapRegs[inst[2]]
+            out[2] = inst[1]
+        if len(out[2]) is 1:
+                out[2] = '0' + out[2]
+        self.program[self.programCounter] = out
 
     def assembleCurrentLine(self): # wish I had case statements
         if self.debug:
@@ -146,6 +222,13 @@ class Assembler:
             self.JType(self.program[self.programCounter]) # jump stuff
         if self.debug:
             print(temp,self.program[self.programCounter])
+
+
+    # for updating things after expanding with pseudo instructions
+    def updateSymbols(self, line, offset):
+        for sym, val in self.symbolDef.items():
+            if val > line:
+                self.symbolDef[sym] += offset
 
     # if the branch is jumping more than 15 down or up, it must be inverted
     # and changed to a jump.
@@ -227,8 +310,6 @@ class Assembler:
             if str(newOffset) != val[2]:
                 self.program[line] = newString
                 
-
-
 
     # should be self explanitory, it is one line and debugging code
     def symToOffset(self, sym, line):
@@ -343,87 +424,6 @@ class Assembler:
             self.programCounter += 1 # Still not missing this
 
 
-# Different types of instructions, may need to change later.
-# If this is changed remember to change the list of instructions at the top
-    def AType(self, inst):
-        out = [0x0,'','','']
-        if '$' in inst[1] and '$' in inst[2] and len(inst) is 3: # two registers
-            out[1] = self.binaryMapRegs[inst[1]]
-            out[2] = self.binaryMapRegs[inst[2]]
-            out[3] = self.binaryMapInst[inst[0]]
-            self.program[self.programCounter] = out
-        elif len(inst) is 3:
-            out[0] = 0x1
-            out[1] = self.binaryMapRegs[inst[1]]
-            out[2] = self.binaryMapRegs['$zz']
-            out[3] = self.binaryMapInst[inst[0]]
-            self.program[self.programCounter] = out
-            if '0x' in inst[2]:
-                self.program.insert(self.programCounter + 1, inst[2][2:])
-            else:
-                self.program.insert(self.programCounter + 1, hex(int(inst[2]) & 0xFFFF))
-            self.programCounter += 1 #because I am inserting the immediate, the PC needs to be increased
-            #self.updateSymbols(self.programCounter, 1)
-        else: # case for which we are loading an immediate into the second source on the same line
-            out[0] = 0x1 
-            out[1] = self.binaryMapRegs[inst[1]]
-            out[2] = self.binaryMapRegs[inst[2]]
-            out[3] = self.binaryMapInst[inst[0]]
-            self.program[self.programCounter] = out 
-            if '0x' in inst[2]:
-                self.program.insert(self.programCounter + 1, inst[2][2:])
-            else:
-                self.program.insert(self.programCounter + 1, hex(int(inst[3]) & 0xFFFF))
-            self.programCounter += 1 # because I am inserting the PC, the immeadiate needs to be increased
-            #self.updateSymbols(self.programCounter, 1)
-
-            #read 
-            # r d o(s)
-            # r d s o
-
-            # write
-            # w o(d) s
-            # w d s o
-    def BType(self, inst):
-        out = ['','','','']
-        if inst[0] in ['r','w']:
-            out[0] = self.binaryMapInst[inst[0]]
-            if inst[0] is 'r':
-                out[1] = self.binaryMapRegs[inst[1]] #setting destination
-                out[2] = self.binaryMapRegs[inst[3]] #setting source
-                out[3] = inst[2]
-            else:
-                out[1] = self.binaryMapRegs[inst[3]] #setting dest
-                out[2] = self.binaryMapRegs[inst[2]] #setting srouce
-                out[3] = inst[1]
-        else: #Handeling Branches
-            out[0] = self.binaryMapInst[inst[0]]
-            out[1] = self.binaryMapRegs[inst[1]]
-            out[2] = self.binaryMapRegs[inst[2]]
-            out[3] = inst[3]
-        self.program[self.programCounter] = out
-
-    def HType(self, inst):
-        out = ['',0x0,0x0,'']
-        out[0] = self.binaryMapInst[inst[0]]
-        out[3] = (int(inst[1]))
-        self.program[self.programCounter] = out
-
-    def JType(self, inst):
-        out = ['','','']
-        if len(inst) is 2:
-            inst = inst + ['0']
-        out[0] = self.binaryMapInst[inst[0]]
-        if '$' in inst[1]: 
-            out[1] = self.binaryMapRegs[inst[1]]
-            out[2] = inst[2]
-        elif '$' in inst[2]:
-            out[1] = self.binaryMapRegs[inst[2]]
-            out[2] = inst[1]
-        if len(out[2]) is 1:
-                out[2] = '0' + out[2]
-        self.program[self.programCounter] = out
-
     # can remove the '0x' later if needed
     def printAsm(self, outFile):
         with open(outFile, 'w') as dest:
@@ -453,9 +453,12 @@ class Assembler:
     def run(self, inPath, outPath):
         self.readFile(inPath)
         self.expandPseudo()
+        
+
         self.expandSymbols()
         self.updateSymbolsAgain()
         self.printAsm(outPath)
+
         if len(self.Warnings):
             print("Warnings:")
             for i in self.Warnings:
