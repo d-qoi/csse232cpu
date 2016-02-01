@@ -108,14 +108,15 @@
 				0x0 & and & \thead{Bitwise ands 2 values}\\ \hline
 			    0x1 & orr & \thead{Bitwise ors 2 values}\\ \hline
 			    0x2 & xor & \thead{Bitwise xors 2 values}\\ \hline
-			    0x3 & not & \thead{Bitwise nots the value}\\ \hline
+			    0x3 & not & \thead{Bitwise nots the first value}\\ \hline
 			    0x4 & tsc & \thead{Converts a number to 2's compliment}\\ \hline
 			    0x5 & slt & \thead{Set less than}\\ \hline
-			    0x6 & sll & \thead{Left logical bit shift}\\ \hline
-			    0x7 & srl & \thead{Right logical bit shift}\\ \hline
-			    0x8 & sra & \thead{Right arithmetic bit shift}\\ \hline
-			    0x9 & add & \thead{Adds 2 values}\\ \hline
-			    0xA & sub & \thead{Subtracts 2 values}\\ \hline
+			    0x6 & sgt & \thead{Set greater than}\\ \hline
+			    0x7 & sll & \thead{Left logical bit shift}\\ \hline
+			    0x8 & srl & \thead{Right logical bit shift}\\ \hline
+			    0x9 & sra & \thead{Right arithmetic bit shift}\\ \hline
+			    0xA & add & \thead{Adds 2 values}\\ \hline
+			    0xB & sub & \thead{Subtracts 2 values}\\ \hline
 			    0xF & cpy & \thead{Copies the value in one register to another}\\ \hline
 			\end{tabular} \end{center}
 			All A-Type instructions, except for not, tsc, slt, and cpy, follow the syntax in the first section of the table below.  Those three can be found in the next sections.
@@ -277,11 +278,11 @@
 			\begin{center} \begin{tabular}{| c | c | c | c | c | c | c | c |} \hline
 				\multirow{2}{*}{Step} & \multirow{2}{*}{A-Type} & \multicolumn{3}{c|}{B-Type} & \multicolumn{2}{c|}{H-Type} & \multirow{2}{*}{J-Type} \\ \cline{3-7}
 				& & Branches & Read & Write & Schwap & Sudo & \\ \hline
-				\thead{Get \\ instruction} & \multicolumn{7}{c|}{\thead{IR = MEM[PC] \\ NextInst = MEM[PC+2] \\ PC += 2}} \\ \hline
-				\thead{Decode ins-\\truction and \\ get stuff from \\ registers} & \multicolumn{7}{c|}{\thead{R0 = reg\#IR[11:8] \\ if(IR[3:0]==0x1) \{R1 = NextInst; PC += 2\} else \{R1 = reg\#IR[7:4]\} \\ ALUout = PC + SE(IR[15:12]) \\ Hreg = IR[3:0]}} \\ \hline
-				\thead{Do \\ computation} & \thead{ALUout = R0 aluop R1} & \thead{if(R0 aluop R1 == 0) \\ PC = ALUout} & \multicolumn{2}{c|}{\thead{ALUout = R1 + SE(Hreg$<<$1)}} & \thead{SchLatch\\= Hreg} & \thead{Change on\\Code\#} & \thead{PC = R0+\\SE(IR[7:0]$<<$1)} \\ \hline
-				\thead{Output} & \thead{R0 in reg. file = ALUout} & & \thead{MemRead = MEM[ALUout]} & \thead{MEM[ALUout] = R0} & \multicolumn{3}{c|}{ } \\ \hline
-				\thead{Output 2} & \multicolumn{2}{c|}{ } & \thead{R0 in reg. file = MemRead} & \multicolumn{4}{c|}{ } \\ \hline
+				\thead{Get \\ instruction} & \multicolumn{7}{c|}{\thead{IR ::= MEM[PC] \\ NextInst ::= MEM[PC+2] \\ PC ::= PC + 2}} \\ \hline
+				\thead{Decode ins-\\truction and \\ get stuff from \\ registers} & \multicolumn{7}{c|}{\thead{R0 ::= reg\#IR[11:8] \\ if(IR[3:0]==0x1) \{R1 ::= NextInst; PC ::= PC + 2\} else \{R1 ::= reg\#IR[7:4]\} \\ ALUout ::= PC + SE(IR[3:0]) \\ Hreg ::= IR[3:0]}} \\ \hline
+				\thead{Do \\ computation} & \thead{ALUout ::= R0 aluop R1} & \thead{if(R0 aluop R1 == 0) \\ PC ::= ALUout} & \multicolumn{2}{c|}{\thead{ALUout ::= R1 + SE(Hreg$<<$1)}} & \thead{SchLatch\\::= Hreg} & \thead{Change on\\Code\#} & \thead{PC ::= R0 +\\SE(IR[7:0]$<<$1)} \\ \hline
+				\thead{Output} & \thead{reg\#IR[8:11] ::= ALUout} & & \thead{MemRead ::= MEM[ALUout]} & \thead{MEM[ALUout] ::= R0} & \multicolumn{3}{c|}{ } \\ \hline
+				\thead{Output 2} & \multicolumn{2}{c|}{ } & \thead{reg\#IR[8:11] ::= MemRead} & \multicolumn{4}{c|}{ } \\ \hline
 			\end{tabular} \end{center}
 		\subsubsection{Datapath}
 			\begin{center}
@@ -374,9 +375,9 @@
 				                &      & 9. & Pass in 0x7FFF and 0xF $\Rightarrow$ The result should be 0\\
 				                &      & 10.& Pass in any other 16-bit value for the first and 4-bit value for the second $\Rightarrow$ The result should be the first input shifted to the right by the amount of the second and the new spots should be filled with the leading digit\\
 				                & add: & 1. & Pass in 0 and 0 $\Rightarrow$ The result should be 0, overflow should be 0\\
-				                &      & 2. & Pass in 0xFFFF and 0x1 $\Rightarrow$ The result should be 0xFFFE, overflow should be 0\\
+				                &      & 2. & Pass in 0xFFFF and 0x1 $\Rightarrow$ The result should be 0, overflow should be 0\\
 				                &      & 3. & Pass in 0x1 and 0xFFFF $\Rightarrow$ The result should be 0, overflow should be 0\\
-				                &      & 4. & Pass in 0xFFFF and 0xFFFF $\Rightarrow$ The result should be 0, overflow should be 0\\
+				                &      & 4. & Pass in 0xFFFF and 0xFFFF $\Rightarrow$ The result should be 0xFFFE, overflow should be 0\\
 				                &      & 5. & Pass in 0x7FFF and 0x1 $\Rightarrow$ The result should be 0x8000, overflow should be 1\\
 				                &      & 6. & Pass in 0x7FFF and 0x7FFF $\Rightarrow$ The result should be 0xFFFE, overflow should be 1\\
 				                &      & 7. & Pass in any other 2 values $\Rightarrow$ The result should be the 2 inputs added together, overflow should be 1 if there is 2's compliment overflow\\
