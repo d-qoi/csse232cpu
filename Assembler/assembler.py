@@ -9,6 +9,7 @@ class Assembler:
     program = []
     globalDef = {}
     symbolDef = {}
+    offsetFlags = {}
 
     binaryMapInst = {'and':0x0, 
                 'orr':0x1,
@@ -201,15 +202,41 @@ class Assembler:
             print('jump to',sym,'being converted to big jump') # come up with better name 
         self.program.insert(i,['cpy','$a1',offset]) # this is not PC relative, so PC doesn't matter
         self.program[i+1] = ['jr','$a1','0']
+        self.offsetFlags[str(i+1)] = [sym,offset,'jump']
 
         if self.debug:
             print(temp,"became:\n",self.program[i],'\n',self.program[i+1])
+
+    # fuck you, I am only doing this once
+    def updateSymbolsAgain(self):
+        if self.debug:
+            print(self.offsetFlags)
+        for line,val in self.offsetFlags.items():
+            if self.debug:
+                print(line, val)
+                print(self.program[int(line)])
+            line = int(line)
+            sym = self.symbolDef[val[0]]
+            if "reg" == val[2]:
+                newOffset = hex(sym - line + self.symOff)[2:]
+                toReplace = hex(val[1])[2:]
+                newString = self.program[line][self.program[line].index(toReplace)] = newOffset
+            else:
+                newOffset = sym*2 + self.progStart
+                newString = "0x%04x"%int(newOffset)
+            if str(newOffset) != val[2]:
+                self.program[line] = newString
+                
+
+
 
     # should be self explanitory, it is one line and debugging code
     def symToOffset(self, sym, line):
         if self.debug:
             print("creating offset from line",line,'to',self.symbolDef[sym],'for sym',sym)
             print('calculated as',self.symbolDef[sym] - line + self.symOff,'for', self.program[line])
+
+        self.offsetFlags[str(line)]=[sym,self.symbolDef[sym] - line + self.symOff,"reg"]
         return self.symbolDef[sym] - line + self.symOff
 
     #two byte mostly for jumps
@@ -427,6 +454,7 @@ class Assembler:
         self.readFile(inPath)
         self.expandPseudo()
         self.expandSymbols()
+        self.updateSymbolsAgain()
         self.printAsm(outPath)
         if len(self.Warnings):
             print("Warnings:")
@@ -458,6 +486,8 @@ Version 1.04
     if '-h' in sys.argv or 'help' in sys.argv:
         print(helpPrint) 
         sys.exit(0)
+
+    sys.argv = ["SimplePrograms\SIMPLEPROCEDURES.asm" ,"SimplePrograms\out\SIMPLEPROCEDURES.bin", "4096","debug"]
 
     inFile = ''
     outFile = 'out.bin'
