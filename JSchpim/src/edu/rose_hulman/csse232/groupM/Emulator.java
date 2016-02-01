@@ -1,6 +1,7 @@
 package edu.rose_hulman.csse232.groupM;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class Emulator {
 	Memory mem;
@@ -8,6 +9,7 @@ public class Emulator {
 	short activeSchwap;
 	Appendable console;
 	boolean halt;
+	ArrayList<Short> breakpoints;
 	
 	public Emulator(short sp, short pc) {
 		halt = false;
@@ -19,22 +21,27 @@ public class Emulator {
 			this.registers[i] = new SchwapRegister();
 		this.setRegister((short) 4, sp);
 		this.setRegister((short) 3, pc);
+		this.breakpoints = new ArrayList<Short>();
 	}
+	
 	
 	/**
 	 * Steps the emulator. Gets instruction at pc, increments pc by 2, then runs instruction.
+	 * @return True if reached a breakpoint.
 	 */
-	public void step() {
+	public boolean step() {
 		if (halt)
-			return;
+			return true;
 		short pc = this.getRegister((short) 3);//pc
 		short inst = mem.getMemory(pc);
 		write("Step: $PC=%04x ==> %04x", pc, inst);
 		this.setRegister((short) 3, (short) (pc + 2));
 		this.cmd(inst);
 		this.setRegister((short) 0, (short) 0);
+		return this.breakpoints.contains(this.getRegister((short) 3));
 	}
-	
+
+
 	/**
 	 * Runs an instruction. 
 	 * @param inst
@@ -159,13 +166,14 @@ public class Emulator {
 			case 1: setRegister(dest, (short) (this.getRegister(dest) | this.getRegister(src))); break;
 			case 2: setRegister(dest, (short) (this.getRegister(dest) ^ this.getRegister(src))); break;
 			case 3: setRegister(dest, (short) (~this.getRegister(dest))); break;
-			case 4: setRegister(dest, (short) (~this.getRegister(src) + 1)); break;
+			case 4: setRegister(dest, (short) (~this.getRegister(dest) + 1)); break;
 			case 5: setRegister(dest, (short) ((this.getRegister(dest) < this.getRegister(src))?1:0)); break;
-			case 6: setRegister(dest, (short) (this.getRegister(dest) << this.getRegister(src))); break;
-			case 7: setRegister(dest, (short) (this.getRegister(dest) >> this.getRegister(src))); break;
-			case 8: setRegister(dest, (short) (this.getRegister(dest) >>> this.getRegister(src))); break;
-			case 9: setRegister(dest, (short) (this.getRegister(dest) + this.getRegister(src))); break;
-			case 0xA: setRegister(dest, (short) (this.getRegister(dest) - this.getRegister(src))); break;
+			case 6: setRegister(dest, (short) ((this.getRegister(dest) > this.getRegister(src))?1:0)); break;
+			case 7: setRegister(dest, (short) (this.getRegister(dest) << this.getRegister(src))); break;
+			case 8: setRegister(dest, (short) (this.getRegister(dest) >> this.getRegister(src))); break;
+			case 9: setRegister(dest, (short) (this.getRegister(dest) >>> this.getRegister(src))); break;
+			case 0xA: setRegister(dest, (short) (this.getRegister(dest) + this.getRegister(src))); break;
+			case 0xB: setRegister(dest, (short) (this.getRegister(dest) - this.getRegister(src))); break;
 			case 0xF: setRegister(dest, this.getRegister(src)); break;
 		}
 	}
@@ -176,6 +184,11 @@ public class Emulator {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	public void setBreakpoint(int addr) {
+		this.write("SET BREAKPOINT:\t%x", (short) addr);
+		this.breakpoints.add(new Short((short) addr));
 	}
 	
 	public void setRegister(short register, short v) {
@@ -227,10 +240,11 @@ public class Emulator {
 			loadTo = Integer.parseInt(lines[0].substring(1),16);
 			i++;
 		}
-		write("Loading data to addres: %04x", loadTo);
+		write("Loading data to address: %04x", loadTo);
+		this.setRegister((short) 3, (short) loadTo);
 		for (; i < lines.length; i++) {
 			mem.setMemory(loadTo, (short) Integer.parseInt(lines[i].substring(2), 16));
-			loadTo+=2;
+			loadTo += 2;
 		}
 	}
 
@@ -245,7 +259,11 @@ public class Emulator {
 		StringBuilder sb = new StringBuilder();
 		for (short l = 0; l < lines; l++) {
 			short[] ln = this.mem.getMemoryBlock(base - (l * 4), 4);
-			sb.append(String.format("%04X:\t", (short) (base - (l * 16))));
+			sb.append(String.format("%s %04X:\t", 
+					(this.breakpoints.contains(
+							(short) (base - (l * 16))
+					))?"*":" ",
+					(short) (base - (l * 16))));
 			for (short i = 3; i >= 0; i--) {
 				sb.append(String.format("%04x ", ln[i]));
 			}
@@ -295,10 +313,11 @@ public class Emulator {
 	}
 	
 	public String disassemble(int addr) {
+		short ppre = mem.getMemory(addr - 4); 
 		short prev = mem.getMemory(addr - 2);
 		short curr = mem.getMemory(addr);
 		short next = mem.getMemory(addr + 2);
-		if ((prev >> 12) == 1) // this is an immediate
+		if (((prev >> 12) == 1) && !((ppre >> 12) == 1)) // this is an immediate
 			return "<IMM>";
 		// Normal
 		String filler = null;
@@ -327,6 +346,7 @@ public class Emulator {
 	}
 }
 
+
 enum FunctionCodes {
 	and,
 	orr, 
@@ -334,12 +354,12 @@ enum FunctionCodes {
 	not,
 	tsc,
 	slt,
+	sgt,
 	sll,
 	srl,
 	sra,
 	add,
 	sub,
-	INVALID_0xB,
 	INVALID_0xC,
 	INVALID_0xD,
 	INVALID_0xE,
