@@ -16,11 +16,12 @@ class Assembler:
                 'not':0x3,
                 'tsc':0x4,
                 'slt':0x5,
-                'sll':0x6,
-                'srl':0x7,
-                'sra':0x8,
-                'add':0x9,
-                'sub':0xA,
+                'sgt':0x6,
+                'sll':0x7,
+                'srl':0x8,
+                'sra':0x9,
+                'add':0xA,
+                'sub':0xB,
                 'cpy':0xF,
                 'beq':0x2,
                 'bne':0x3,
@@ -445,7 +446,7 @@ if 'debug'(all lower) is passed anywhere, it will toggle debugging mode
 if an integer is passed, it will offset the program counter so that all direct jumps
 are recorded accurately
 
-Version 1.03
+Version 1.04
 
 """
 
