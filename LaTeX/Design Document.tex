@@ -48,9 +48,7 @@
 					    4 - 7        & User Saved Temporaries    & Yes\\ \hline
 					    8            & Arguments 0 - 3           & No \\ \hline
 					    9            & Return Values 0 - 3       & No \\ \hline
-					    10 - 14      & Reserved For Future Use$^\dagger$ & -  \\ \hline
-					    15           & Go to the last used group & -  \\
-					\hline
+					    10 - 15      & Reserved For Future Use$^\dagger$ & -  \\ \hline
 				\end{tabular} \\
 				$^\dagger$See Section 6.1.2-1 for details
 			\end{center}
@@ -72,7 +70,7 @@
 					15 & & & & & & & 0
 				\end{tabular}
 			\end{center}
-			Used for all ALU operations.  It consists of a 4-bit OP code, 4-bit destination, 4-bit source, and a 4-bit function code.  If the instruction has an immediate, it is inserted as the next instruction.
+			Used for all ALU operations.  It consists of a 4-bit OP code, 4-bit destination, 4-bit source, and a 4-bit function code.  If the instruction has an immediate, it is inserted as the next instruction, and if a source is not given then it should be all 0's.
 		\subsubsection{B-Type}
 			\begin{center}
 				\begin{tabular}{l r l r l r l r}
@@ -182,6 +180,16 @@
 				bgt  & bgt [src0] [src1] label & \thead{blt [src0] [src1] Next \\ j label \\ Next:} & \thead{Branching up or branching down \\ more than 16 instructions}\\ \hline
 				blt  & blt [src0] [src1] label & \thead{bgt [src0] [src1] Next \\ j label \\ Next:} & \thead{Branching up or branching down \\ more than 16 instructions}\\ \hline
 			\end{tabular} \end{center}
+	\subsection{Sudo}
+		Sudo is the analogous to "syscall" in MIPS.  It does a bunch of system stuff based on the code you give it.
+		\begin{center} \begin{tabular}{| c | c |} \hline
+			\multicolumn{2}{|c|}{Sudo modes} \\ \hline
+			Syntax  & Description \\ \hline
+			sudo 0  & \thead{Signifies the end of a program}\\ \hline
+			sudo 1  & \thead{Turtle mode (half of normal clock speed)}\\ \hline
+			sudo 2  & \thead{Turbo mode (double normal clock speed)}\\ \hline
+			sudo 15 & \thead{Self destruct}\\ \hline
+		\end{tabular} \end{center}
 \section{RTL and Datapath}
 	\subsection{Components}
 		\subsubsection{Single 16-bit Register}
@@ -287,8 +295,59 @@
 		\subsubsection{Datapath}
 			\begin{center}
 				\includegraphics[width=22.5cm]{datapath}
-			\end{center}
-		\end{landscape}
+			\end{center} \end{landscape}
+	\subsection{Control}
+		All of the bits are in hex.  Any where there is a "-" means the control bit(s) doesn't matter.
+		\subsubsection{Cycle 0}
+			All instructions use these.
+			\begin{center} \begin{tabular}{| c | c | c | c | c | c | c |} \hline 
+				\rotatebox[origin=c]{90}{PCsrc} & \rotatebox[origin=c]{90}{PCwrite} & \rotatebox[origin=c]{90}{Addr0Src} & \rotatebox[origin=c]{90}{memRead} & \rotatebox[origin=c]{90}{memWrite} & \rotatebox[origin=c]{90}{IRwrite} & \rotatebox[origin=c]{90}{ nextInstWrite } \\ \hline 
+				1 & 1 & 1 & 1 & 0 & 1 & 1\\ \hline
+			\end{tabular} \end{center}
+		\subsubsection{Cycle 1}
+			\begin{center} \begin{tabular}{| c | c | c | c | c | c | c | c | c | c | c | c | c | c | c | c | c | c |} \hline 
+				\rotatebox[origin=c]{90}{Op Code} & \rotatebox[origin=c]{90}{Instruction} & \rotatebox[origin=c]{90}{PCsrc} & \rotatebox[origin=c]{90}{PCwrite} & \rotatebox[origin=c]{90}{Addr0Src} & \rotatebox[origin=c]{90}{memRead} & \rotatebox[origin=c]{90}{memWrite} & \rotatebox[origin=c]{90}{IRwrite} & \rotatebox[origin=c]{90}{ nextInstWrite } & \rotatebox[origin=c]{90}{regStore} & \rotatebox[origin=c]{90}{regWrite} & \rotatebox[origin=c]{90}{imm} & \rotatebox[origin=c]{90}{R0write} & \rotatebox[origin=c]{90}{R1write} & \rotatebox[origin=c]{90}{ALUsrc0} & \rotatebox[origin=c]{90}{ALUsrc1} & \rotatebox[origin=c]{90}{ALUctrl} & \rotatebox[origin=c]{90}{SchwapClk} \\ \hline
+				0 & ALU & - & 0 & - & - & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 1 & 0 & 1 & 0 & 0 \\ \hline
+				1 & ALUI& - & 1 & - & - & 0 & 0 & 0 & 1 & 0 & 1 & 1 & 1 & 0 & 1 & 0 & 0 \\ \hline
+				2 & beq & - & 0 & - & - & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 1 & 0 & 1 & 0 & 0 \\ \hline
+				3 & bne & - & 0 & - & - & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 1 & 0 & 1 & 0 & 0 \\ \hline
+				4 & bgt & - & 0 & - & - & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 1 & 0 & 1 & 0 & 0 \\ \hline
+				5 & blt & - & 0 & - & - & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 1 & 0 & 1 & 0 & 0 \\ \hline
+				6 & jr  & - & 0 & - & - & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 1 & 0 & 1 & 0 & 0 \\ \hline
+				7 & r   & - & 0 & - & - & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 1 & 0 & 1 & 0 & 0 \\ \hline
+				8 & w   & - & 0 & - & - & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 1 & 0 & 1 & 0 & 0 \\ \hline
+				E & rsh & - & 0 & - & - & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 1 & 0 & 1 & 0 & 0 \\ \hline
+				F & sudo& - & 0 & - & - & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 1 & 0 & 1 & 0 & 0 \\ \hline
+			\end{tabular} \end{center}
+		\subsubsection{Cycle 2}
+			\begin{center} \begin{tabular}{| c | c | c | c | c | c | c | c | c | c | c | c | c | c | c | c | c | c |} \hline 
+				\rotatebox[origin=c]{90}{Op Code} & \rotatebox[origin=c]{90}{Instruction} & \rotatebox[origin=c]{90}{PCsrc} & \rotatebox[origin=c]{90}{PCwrite} & \rotatebox[origin=c]{90}{Addr0Src} & \rotatebox[origin=c]{90}{memRead} & \rotatebox[origin=c]{90}{memWrite} & \rotatebox[origin=c]{90}{IRwrite} & \rotatebox[origin=c]{90}{ nextInstWrite } & \rotatebox[origin=c]{90}{regStore} & \rotatebox[origin=c]{90}{regWrite} & \rotatebox[origin=c]{90}{imm} & \rotatebox[origin=c]{90}{R0write} & \rotatebox[origin=c]{90}{R1write} & \rotatebox[origin=c]{90}{ALUsrc0} & \rotatebox[origin=c]{90}{ALUsrc1} & \rotatebox[origin=c]{90}{ALUctrl} & \rotatebox[origin=c]{90}{SchwapClk} \\ \hline
+				0 & ALU & - & 0 & - & - & 0 & 0 & 0 & - & 0 & - & 0 & 0 & 1 & 0 & 1 & 0 \\ \hline
+				1 & ALUI& - & 0 & - & - & 0 & 0 & 0 & - & 0 & - & 0 & 0 & 1 & 0 & 1 & 0 \\ \hline
+				2 & beq & 0 & 1 & - & - & 0 & - & - & - & 0 & - & 0 & 0 & 2 & 0 & 0 & 0 \\ \hline
+				3 & bne & 0 & 1 & - & - & 0 & - & - & - & 0 & - & 0 & 0 & 2 & 0 & 0 & 0 \\ \hline
+				4 & bgt & 0 & 1 & - & - & 0 & - & - & - & 0 & - & 0 & 0 & 2 & 0 & 0 & 0 \\ \hline
+				5 & blt & 0 & 1 & - & - & 0 & - & - & - & 0 & - & 0 & 0 & 2 & 0 & 0 & 0 \\ \hline
+				6 & jr  & 0 & 1 & - & - & 0 & - & - & - & 0 & - & 0 & 0 & 1 & 1 & 0 & 0 \\ \hline
+				7 & r   & - & 0 & - & - & 0 & 0 & 0 & - & 0 & - & 0 & 0 & 2 & 0 & 0 & 0 \\ \hline
+				8 & w   & - & 0 & - & - & 0 & 0 & 0 & - & 0 & - & 0 & 0 & 2 & 0 & 0 & 0 \\ \hline
+				E & rsh & - & 0 & - & - & 0 & - & - & - & 0 & - & 0 & 0 & - & - & 0 & 1 \\ \hline
+				F & sudo& - & 0 & - & - & 0 & - & - & - & 0 & - & 0 & 0 & 0 & 0 & 0 & 0 \\ \hline
+			\end{tabular} \end{center}
+		\subsubsection{Cycle 3}
+			\begin{center} \begin{tabular}{| c | c | c | c | c | c | c | c | c | c | c |} \hline 
+				\rotatebox[origin=c]{90}{Op Code} & \rotatebox[origin=c]{90}{Instruction} & \rotatebox[origin=c]{90}{PCsrc} & \rotatebox[origin=c]{90}{PCwrite} & \rotatebox[origin=c]{90}{Addr0Src} & \rotatebox[origin=c]{90}{memRead} & \rotatebox[origin=c]{90}{memWrite} & \rotatebox[origin=c]{90}{IRwrite} & \rotatebox[origin=c]{90}{ nextInstWrite } & \rotatebox[origin=c]{90}{regStore} & \rotatebox[origin=c]{90}{regWrite} \\ \hline
+				0 & ALU & - & 0 & 0 & 0 & 0 & - & - & 0 & 1 \\ \hline
+				1 & ALUI& - & 0 & 0 & 0 & 0 & - & - & 0 & 1 \\ \hline
+				7 & r   & - & 0 & 0 & 1 & 0 & 0 & - & - & 0 \\ \hline
+				8 & w   & - & 0 & 0 & 0 & 1 & 0 & - & - & 0 \\ \hline
+			\end{tabular} \end{center}
+		\subsubsection{Cycle 4}
+			Only read uses this cycle.
+			\begin{center} \begin{tabular}{| c | c | c | c | c | c | c | c | c |} \hline 
+				\rotatebox[origin=c]{90}{PCsrc} & \rotatebox[origin=c]{90}{PCwrite} & \rotatebox[origin=c]{90}{Addr0Src} & \rotatebox[origin=c]{90}{memRead} & \rotatebox[origin=c]{90}{memWrite} & \rotatebox[origin=c]{90}{IRwrite} & \rotatebox[origin=c]{90}{ nextInstWrite } & \rotatebox[origin=c]{90}{regStore} & \rotatebox[origin=c]{90}{regWrite} \\ \hline
+				- & 0 & - & 0 & 0 & 0 & - & 0 & 1 \\ \hline
+			\end{tabular} \end{center}
 	\subsection{Unit Tests and Implementation}
 		\subsubsection{Single 16-bit Registers}
 			\begin{tabular}{ r  r  p{12cm} }
@@ -412,10 +471,11 @@
 				                & 3. & Pass in data to Store and a valid memory address and set memWrite to 0 $\Rightarrow$ The the data from Store should not have been written to memory\\
 			\end{tabular}
 	\subsection{Integration Tests}
+		Almost all of the tests require almost all of the components so it is reccomended the entire data path be built to run these tests.
 		\subsubsection{Get instruction}
 			\begin{tabular}{ r  p{15cm} }
 				1. & Give PC a memory address with an instruction\\
-				2. & Toggle memRead and the instruction at the given address, as well as the next instruction, should now be in IR and NextInst respectively\\
+				2. & Toggle memRead and the instruction at the given address, as well as the next instruction, should now be in IR (and the MemRead register) and NextInst respectively\\
 				3. & PC should have been incremented by 2 so the process can be repeated\\
 			\end{tabular}
 		\subsubsection{Decode instruction and get stuff from registers}
@@ -668,6 +728,7 @@ Exit:
 						             & 1     & Exception Status \\
 						             & 2     & EPC \\
 						             & 3     & Exception Temporary \\ \hline
+						15           & 0 - 3 & Illuminati \\ \hline
 					\end{tabular} \end{center} 
 			\end{enumerate}
 	\subsection{Instructions}
