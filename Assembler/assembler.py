@@ -195,7 +195,7 @@ class Assembler:
               self.program[i-1] == [0x0,0x5,0x3,0x9]):
             self.program[i-2] = '0x8' #woo magic number, this is because there is an added instruction
 
-        offset = str(self.symbolDef[sym] + self.progStart) # This is the only place progStart comes into play
+        offset = str(self.symbolDef[sym]*2 + self.progStart) # This is the only place progStart comes into play
         if self.debug:
             print('jump to',sym,'being converted to big jump') # come up with better name 
         self.program.insert(i,['cpy','$a1',offset]) # this is not PC relative, so PC doesn't matter
