@@ -243,7 +243,6 @@
 				In  & B        & 16   & Second input \\ \hline
 				Out & R        & 16   & Result \\ \hline
 				Out & zero     & 1    & If result is 0 \\ \hline
-				Out & overflow & 1    & If there is overflow \\ \hline
 				Control & op   & 4    & Operation code \\ \hline
 			\end{tabular} \end{center}
 		\subsubsection{Register File}
@@ -433,20 +432,20 @@
 				                &      & 8. & Pass in 0x7FFF and 0xE $\Rightarrow$ The result should be 0x1\\
 				                &      & 9. & Pass in 0x7FFF and 0xF $\Rightarrow$ The result should be 0\\
 				                &      & 10.& Pass in any other 16-bit value for the first and 4-bit value for the second $\Rightarrow$ The result should be the first input shifted to the right by the amount of the second and the new spots should be filled with the leading digit\\
-				                & add: & 1. & Pass in 0 and 0 $\Rightarrow$ The result should be 0, overflow should be 0\\
-				                &      & 2. & Pass in 0xFFFF and 0x1 $\Rightarrow$ The result should be 0, overflow should be 0\\
-				                &      & 3. & Pass in 0x1 and 0xFFFF $\Rightarrow$ The result should be 0, overflow should be 0\\
-				                &      & 4. & Pass in 0xFFFF and 0xFFFF $\Rightarrow$ The result should be 0xFFFE, overflow should be 0\\
-				                &      & 5. & Pass in 0x7FFF and 0x1 $\Rightarrow$ The result should be 0x8000, overflow should be 1\\
-				                &      & 6. & Pass in 0x7FFF and 0x7FFF $\Rightarrow$ The result should be 0xFFFE, overflow should be 1\\
-				                &      & 7. & Pass in any other 2 values $\Rightarrow$ The result should be the 2 inputs added together, overflow should be 1 if there is 2's compliment overflow\\
-				                & sub: & 1. & Pass in 0 and 0 $\Rightarrow$ The result should be 0, overflow should be 0\\
-				                &      & 2. & Pass in 0xFFFF and 0x1 $\Rightarrow$ The result should be 0xFFFE, overflow should be 0\\
-				                &      & 3. & Pass in 0x1 and 0xFFFF $\Rightarrow$ The result should be 0x10, overflow should be 0\\
-				                &      & 4. & Pass in 0xFFFF and 0xFFFF $\Rightarrow$ The result should be 0, overflow should be 0\\
-				                &      & 5. & Pass in 0x8000 and 0x1 $\Rightarrow$ The result should be 0x7FFF, overflow should be 1\\
-				                &      & 6. & Pass in 0x8000 and 0x7FFF $\Rightarrow$ The result should be 0x1, overflow should be 1\\
-				                &      & 7. & Pass in any other 2 values $\Rightarrow$ The result should be the 2 inputs subtracted, overflow should be 1 if there is 2's compliment overflow\\
+				                & add: & 1. & Pass in 0 and 0 $\Rightarrow$ The result should be 0\\
+				                &      & 2. & Pass in 0xFFFF and 0x1 $\Rightarrow$ The result should be 0\\
+				                &      & 3. & Pass in 0x1 and 0xFFFF $\Rightarrow$ The result should be 0\\
+				                &      & 4. & Pass in 0xFFFF and 0xFFFF $\Rightarrow$ The result should be 0xFFFE\\
+				                &      & 5. & Pass in 0x7FFF and 0x1 $\Rightarrow$ The result should be 0x8000\\
+				                &      & 6. & Pass in 0x7FFF and 0x7FFF $\Rightarrow$ The result should be 0xFFFE\\
+				                &      & 7. & Pass in any other 2 values $\Rightarrow$ The result should be the 2 inputs added together\\
+				                & sub: & 1. & Pass in 0 and 0 $\Rightarrow$ The result should be 0\\
+				                &      & 2. & Pass in 0xFFFF and 0x1 $\Rightarrow$ The result should be 0xFFFE\\
+				                &      & 3. & Pass in 0x1 and 0xFFFF $\Rightarrow$ The result should be 0x10\\
+				                &      & 4. & Pass in 0xFFFF and 0xFFFF $\Rightarrow$ The result should be 0\\
+				                &      & 5. & Pass in 0x8000 and 0x1 $\Rightarrow$ The result should be 0x7FFF\\
+				                &      & 6. & Pass in 0x8000 and 0x7FFF $\Rightarrow$ The result should be 0x1\\
+				                &      & 7. & Pass in any other 2 values $\Rightarrow$ The result should be the 2 inputs subtracted\\
 				                & cpy: & 1. & Pass in 0 $\Rightarrow$ The result should be 0\\
 				                &      & 2. & Pass in 0xFFFF $\Rightarrow$ The result should be 0xFFFF\\
 				                &      & 3. & Pass in any other value $\Rightarrow$ The result should the value\\
