@@ -406,9 +406,9 @@ class Assembler:
         else:
             if inst[2] in symDict:
                 offset = hex(self.getSymOffset(inst[2],line, symDict) & 0xFF)[2:]
+                offset = '0'*(2-len(offset))+offset
             else:
                 offset = '00'
-            offset = '0'*(len(offset)-2)+offset
             self.program[line][1] = ('0x' +
                                     hex(self.binaryMapInst[inst[0]])[2:] +
                                     hex(self.binaryMapRegs[inst[1]])[2:] +
@@ -439,6 +439,7 @@ class Assembler:
         with open(outFile, 'w') as dest:
             for line in self.program:
                 dest.write(line[1])
+                dest.write('\n')
 
     def debugPrintAll(self):
         for line in self.program:
