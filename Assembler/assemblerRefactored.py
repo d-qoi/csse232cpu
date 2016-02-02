@@ -331,26 +331,74 @@ class Assembler:
         return changeCount
 
     def AType(self, line):
-        inst = self.program[line]
+        inst = self.program[line][0]
         if len(inst[0]) == 3:
-            if '$' in inst[0][1] and '$' in inst[0][2]:
-                self.program[line][1] = ('0x' + hex(0) +
-                                        hex(self.binaryMapRegs[inst[0][1]])[2:] +
-                                        hex(self.binaryMapRegs[inst[0][2]])[2:] + 
-                                        hex(self.binaryMapInst[inst[0][3]])[2:])
+            if '$' in inst[1] and '$' in inst[2]:
+                self.program[line][1] = ('0x' + hex(0)[2:] +
+                                        hex(self.binaryMapRegs[inst[1]])[2:] +
+                                        hex(self.binaryMapRegs[inst[2]])[2:] + 
+                                        hex(self.binaryMapInst[inst[3]])[2:])
             elif:
-                self.program[line][1] = ('0x' + hex(1) +
-                                        hex(self.binaryMapRegs[inst[0][1]])[2:] +
+                self.program[line][1] = ('0x' + hex(1)[2:] +
+                                        hex(self.binaryMapRegs[inst[1]])[2:] +
                                         hex(self.binaryMapRegs['$0'])[2:] + 
-                                        hex(self.binaryMapInst[inst[0][3]])[2:])
-        elif len(inst[0]) == 4:
-            self.program[line][1] = ('0x' + hex(1) +
-                                    hex(self.binaryMapRegs[inst[0][1]])[2:] +
-                                    hex(self.binaryMapRegs[inst[0][2]])[2:] + 
-                                    hex(self.binaryMapInst[inst[0][3]])[2:])
+                                        hex(self.binaryMapInst[inst[3]])[2:])
+        elif len(inst) == 4:
+            self.program[line][1] = ('0x' + hex(1)[2:] +
+                                    hex(self.binaryMapRegs[inst[1]])[2:] +
+                                    hex(self.binaryMapRegs[inst[2]])[2:] + 
+                                    hex(self.binaryMapInst[inst[3]])[2:])
 
-    def BType(self):
+    def BType(self, line):
+        inst = self.program[line][0]
+        #read 
+        # r d o(s)
+        # r d s o
+
+        # write
+        # w o(d) s
+        # w d s o
+        if inst[0] == 'r':
+            self.program[line][1] = ('0x' + 
+                                    hex(self.binaryMapInst[inst[0]])[2:] + # inst 0
+                                    hex(self.binaryMapRegs[inst[1]])[2:] + # dest 1
+                                    hex(self.binaryMapRegs[inst[3]])[2:] + # source 3
+                                    hex(int(inst[2]))[2:])                 # offset 2
+                                    
+        elif inst[0] == 'w':
+            self.program[line][1] = ('0x' + 
+                                    hex(self.binaryMapInst[inst[0]])[2:] + # inst 0
+                                    hex(self.binaryMapRegs[inst[2]])[2:] + # dest 2
+                                    hex(self.binaryMapRegs[inst[3]])[2:] + # source 3
+                                    hex(int(inst[1]))[2:])                 # offset 1
         
+        elif:
+            self.program[line][1] = ('0x' + 
+                                    hex(self.binaryMapInst[inst[0]])[2:] +
+                                    hex(self.binaryMapRegs[inst[1]])[2:] +
+                                    hex(self.binaryMapRegs[inst[2]])[2:] +
+                                    hex(int(inst[3]))[2:])
+
+    def HType(self, line):
+        inst = self.program[line][0]
+        self.program[line][1] = ('0x' + 
+                                hex(self.binaryMapInst[inst[0]])[2:] + 
+                                '00' +
+                                hex(int(line[1]))[s:])
+
+    def JType(self,line):
+        inst = self.program[line][0]
+        if len(inst) == 2:
+            self.program[line][1] = ('0x' + 
+                                    hex(self.binaryMapInst[inst[0]])[2:] +
+                                    hex(self.binaryMapRegs[inst[1]])[2:] + 
+                                    '00')
+        elif:
+            self.program[line][1] = ('0x' +
+                                    hex(self.binaryMapInst[inst[0]])[2:] +
+                                    hex(self.binaryMapRegs[inst[1]])[2:] +
+                                    '%02x'%int(inst[2]))
+
 
 
     def assemble(self):
