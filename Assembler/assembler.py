@@ -453,7 +453,8 @@ class Assembler:
             pass
         self.assemble()
         self.printAsm(outFile)
-        
+        for line in self.Warnings:
+            print(line)
 
 
 if __name__ == '__main__':
