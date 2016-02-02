@@ -1,5 +1,6 @@
-# Simple programs to test the CPU
+# Version 2 of the Schwap Assembler
 
+## Simple programs to test the CPU
 Provided to help test the assembler as well
 
 1. FIB
@@ -31,3 +32,9 @@ eg: 1000, 1002, 1004...
 This mean all non PC relative jumps will be jumping to something big if that is not taken into account.
 
 If this needs to be changed, re-assemble things, it is easy to use the python script, it has help text. Pass it -h or help or run it with no arguments to see it.
+
+This does handle the fact that the programs do grow as the numbers being jumped or branched increase, this does deal with it, if the program appears bigger than was initially predicted, that is because one of the edge cases was hit, either a jump grew outside of the offset range, or a branch did. In rare cases, both can happen. (See Test3 symbolic jump in SimpleProcedures.*)
+
+### Predicted things
+
+There may be a bug with the reading from memory, or writing to memory. I am not sure, but it appeared to change something that I was not expecting it to change.
