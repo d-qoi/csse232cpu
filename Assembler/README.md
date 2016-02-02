@@ -28,7 +28,7 @@ At this time there are a few assumptions
 2. All immediates are in base 10, the current version of the assembler doesn't like hex yet.
 
 
-Everything in the out file has been assembled with **1000** as the offset.
+Everything in the out file has been assembled with **4096** as the offset.
 This assumes that the program will start at 1000, and travel up in memory
 eg: 1000, 1002, 1004...
 This mean all non PC relative jumps will be jumping to something big if that is not taken into account.
