@@ -3,16 +3,16 @@ RelPrime:
 	cpy	$h0 $ra			#save $ra
 	rsh 8
 	cpy	$s0 $h0			#copy n out of schwap
-	cpy	$s1 0x2			#load 2 to m
+	cpy	$s1 2			#load 2 to m
 While:
 	rsh	8				#set schwap to args
 	cpy	$h0 $s0			#set a0 to n
 	cpy	$h1 $s1			#set a1 to m
 	jal	GCD				#call GCD
 	rsh	9				#set schwap
-	cpy	$t0 0x1			#load immediate 0x1 to t0
+	cpy	$t0 1			#load immediate 0x1 to t0
 	bne	$h0 $t0 Done	#branch to done if r0 != 1
-	add	$s1 0x1			#add 1 to m
+	add	$s1 1			#add 1 to m
 	j	While			#jump to the start of the loop
 Done:
 	rsh	9				#load return registers

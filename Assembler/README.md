@@ -17,14 +17,16 @@ Provided to help test the assembler as well
 	* no branching
 
 
-#### Notes
+### Notes
 
 At this time there are a few assumptions
 
-1. sudo 10 will display everything is schwap 12
-2. sudo 0 will end the program
+1. Sudo instructions
+	- sudo 10 will display everything is schwap 12
+	- sudo 0 will end the program
+		These are made to deal with the fact that _0000_ is _and $0 $0_ and not good ways to determine the end of a programs.
+2. All immediates are in base 10, the current version of the assembler doesn't like hex yet.
 
-These are made to deal with the fact that _0000_ is _and $0 $0_ and not good ways to determine the end of a program.
 
 Everything in the out file has been assembled with **1000** as the offset.
 This assumes that the program will start at 1000, and travel up in memory
