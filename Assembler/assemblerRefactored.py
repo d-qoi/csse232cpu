@@ -270,9 +270,9 @@ class Assembler:
 
     def jumpToBigJump(self, line):
         oldLine = self.program[line]
-        sym = oldLine[0][2]
+        sym = str(oldLine[0][2])
         if self.debug:
-            print("converting %s to:"%oldLine[0])
+            print("converting %s to and sym %s:"%(oldLine[0],sym))
         # updating branches
         if (line > 1 and
             self.program[line-1][0][0] in {'beq','bne','bgt','blt'} and
@@ -285,14 +285,19 @@ class Assembler:
             self.program[line-1][0] == ['add','$ra','$pc']):
 
             self.program[line-3][0] = ['cpy','$ra','8'] #should either be 8 or A
-            self.program[line-2][1] = ['0x0008']
+            self.program[line-2][1] = '0x0008'
 
-        self.program.insert(line,[['imm'],oldLine[2],'']) #inserting the target for the Copy
+        self.program.insert(line,[['imm'],sym,'']) #inserting the target for the Copy
+        if self.debug:
+            print(self.program[line], 'adding new immediate')
         self.program.insert(line,[['cpy','$a1','0'],'','']) # 0 to make sure it loads the immediate
         oldLine[0] = ['jr','$a1','0']
         
-        if self.debug:
-            print("%s\n%s\n%s"%self.program[line-2],self.program[line-1], self.program[line])
+        if self.debug and line > 3:
+            print(self.program[line-3],self.program[line-2],self.program[line-1], self.program[line])
+
+    def getSymOffset(self, sym, programCounter, symDict):
+        return symDict[sym] - programCounter - 1
 
 
     # this is not assembling the code, it is just making sure symbols line up.
@@ -301,10 +306,7 @@ class Assembler:
         changeCount = 0 #did anything change, will loop this till this remains zero
         symDict = self.createTempSymbolDict()
 
-        # commonly used, so I am putting it here.
-        def getSymOffset(sym):
-            return symDict[sym] - programCounter - 1
-
+       
         while programCounter < len(self.program):
             line = self.program[programCounter] 
             #skipping things that don't change
@@ -315,13 +317,14 @@ class Assembler:
         # Branching and jumping remain
             # branching and is there actually a symbol
             if line[0][0] in self.BTypeList and line[0][3] in symDict: 
-                offset = getSymOffset(line[0][3])
+                offset = self.getSymOffset(line[0][3], programCounter, symDict)
                 if offset > 15 or offset < 0:
                     changeCount += 1
                     self.branchToJump(programCounter)
+
             # jump and jumbol checking
-            elif line[0][0] in self.JTypeList and line[0][2] in symDict:
-                offset = getSymOffset(line[0][2])
+            elif line[0][0] in self.JTypeList and len(line[0]) > 2 and line[0][2] in symDict:
+                offset = self.getSymOffset(line[0][2], programCounter, symDict)
                 if offset > 127 or offset < -128:
                     changeCount += 1
                     self.jumpToBigJump(programCounter)                
@@ -333,23 +336,23 @@ class Assembler:
     def AType(self, line):
         inst = self.program[line][0]
         if len(inst[0]) == 3:
-            if '$' in inst[1] and '$' in inst[2]:
+            if '$' in inst[1] and '$' in inst[2] and len(inst) == 3:
                 self.program[line][1] = ('0x' + hex(0)[2:] +
                                         hex(self.binaryMapRegs[inst[1]])[2:] +
                                         hex(self.binaryMapRegs[inst[2]])[2:] + 
-                                        hex(self.binaryMapInst[inst[3]])[2:])
-            elif:
+                                        hex(self.binaryMapInst[inst[0]])[2:])
+            else:
                 self.program[line][1] = ('0x' + hex(1)[2:] +
                                         hex(self.binaryMapRegs[inst[1]])[2:] +
                                         hex(self.binaryMapRegs['$0'])[2:] + 
-                                        hex(self.binaryMapInst[inst[3]])[2:])
-        elif len(inst) == 4:
+                                        hex(self.binaryMapInst[inst[0]])[2:])
+        else:
             self.program[line][1] = ('0x' + hex(1)[2:] +
                                     hex(self.binaryMapRegs[inst[1]])[2:] +
                                     hex(self.binaryMapRegs[inst[2]])[2:] + 
-                                    hex(self.binaryMapInst[inst[3]])[2:])
+                                    hex(self.binaryMapInst[inst[0]])[2:])
 
-    def BType(self, line):
+    def BType(self, line, symDict):
         inst = self.program[line][0]
         #read 
         # r d o(s)
@@ -372,7 +375,14 @@ class Assembler:
                                     hex(self.binaryMapRegs[inst[3]])[2:] + # source 3
                                     hex(int(inst[1]))[2:])                 # offset 1
         
-        elif:
+        elif inst[3] in symDict:
+            self.program[line][1] = ('0x' + 
+                                    hex(self.binaryMapInst[inst[0]])[2:] +
+                                    hex(self.binaryMapRegs[inst[1]])[2:] +
+                                    hex(self.binaryMapRegs[inst[2]])[2:] +
+                                    hex(self.getSymOffset(inst[3],line, symDict))[2:])
+
+        else:
             self.program[line][1] = ('0x' + 
                                     hex(self.binaryMapInst[inst[0]])[2:] +
                                     hex(self.binaryMapRegs[inst[1]])[2:] +
@@ -384,41 +394,51 @@ class Assembler:
         self.program[line][1] = ('0x' + 
                                 hex(self.binaryMapInst[inst[0]])[2:] + 
                                 '00' +
-                                hex(int(line[1]))[s:])
+                                hex(int(inst[1]))[2:])
 
-    def JType(self,line):
+    def JType(self,line, symDict):
         inst = self.program[line][0]
         if len(inst) == 2:
             self.program[line][1] = ('0x' + 
                                     hex(self.binaryMapInst[inst[0]])[2:] +
                                     hex(self.binaryMapRegs[inst[1]])[2:] + 
                                     '00')
-        elif:
+        else:
+            if inst[2] in symDict:
+                offset = hex(self.getSymOffset(inst[2],line, symDict) & 0xFF)[2:]
+            else:
+                offset = '00'
+            offset = '0'*(len(offset)-2)+offset
             self.program[line][1] = ('0x' +
                                     hex(self.binaryMapInst[inst[0]])[2:] +
                                     hex(self.binaryMapRegs[inst[1]])[2:] +
-                                    '%02x'%int(inst[2]))
-
-
+                                    offset)
 
     def assemble(self):
         symDict = self.createTempSymbolDict()
         programCounter = 0;
         while programCounter < len(self.program):
+            if self.debug:
+                temp = self.program[programCounter]
             if self.program[programCounter][0][0] in self.ATypeList:
                 self.AType(programCounter)
             elif self.program[programCounter][0][0] in self.BTypeList:
-                self.BType(programCounter)
+                self.BType(programCounter,symDict)
             elif self.program[programCounter][0][0] in self.HTypeList:
                 self.HType(programCounter)
             elif self.program[programCounter][0][0] in self.JTypeList:
-                self.JType(programCounter)
-            elif self.program[programCounter][0][0] == 'imm'
+                self.JType(programCounter,symDict)
+            elif self.program[programCounter][0][0] == 'imm':
                 if self.program[programCounter][1] in symDict:
-                    self.program[programCounter][1] = '0x%04x'%line[1]
+                    self.program[programCounter][1] = '0x%04x'%(symDict[self.program[programCounter][1]] + self.progStart)
             if self.debug:
-                print(self.program[self.programCounter])
+                print(self.program[programCounter])
+            programCounter += 1
 
+    def printAsm(self,outFile):
+        with open(outFile, 'w') as dest:
+            for line in self.program:
+                dest.write(line[1])
 
     def debugPrintAll(self):
         for line in self.program:
@@ -427,18 +447,17 @@ class Assembler:
     def run(self,inFile,outFile):
         self.readFile(inFile)
         self.expandPseudoInst()
-        self.debugPrintAll()
+        #self.debugPrintAll()
         while self.convert() != 0:
             pass
         self.assemble()
+        self.printAsm(outFile)
         
 
 
 if __name__ == '__main__':
     import sys
 
-    #sys.argv = [sys.argv[0], "SimplePrograms\\SIMPLEPROCEDURES.asm","debug"]
-    
     helpPrint = """
 
 The use of this program:
@@ -451,7 +470,7 @@ if 'debug'(all lower) is passed anywhere, it will toggle debugging mode
 if an integer is passed, it will offset the program counter so that all direct jumps
 are recorded accurately
 
-Version 1.04
+Version 2.00
 
 """
 
@@ -460,7 +479,7 @@ Version 1.04
         sys.exit(0)
 
     #sys.argv = ["SimplePrograms\SIMPLEPROCEDURES.asm" ,"SimplePrograms\out\SIMPLEPROCEDURES.bin", "4096","debug"]
-    sys.argv = ['Tests.asm','debug']
+    #sys.argv = ['Tests.asm','debug']
     
     inFile = ''
     outFile = 'out.bin'
