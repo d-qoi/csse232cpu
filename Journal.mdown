@@ -43,3 +43,18 @@ In this milestone we accomplished the following:
 *	Emulator is in progress
 
 We met Wednesday to work on homework and finish the assembler. A larger meeting took place Sunday to design the data path and finish up other work. Wesley finished about half of a compiler, did the documentation and tests, as well as provided markers and beautiful whiteboard drawing skills. Alex polished off the assembler. Charlie turned the data path into a useful picture, and did the journal. Andrew began progress on the emulator and is about halfway done. Alex, Charlie and Wesley designed the data path on the white board collaboratively.
+
+Milestone Four
+--------------
+
+In this milestone we accomplished the following:
+
+*	Updated documentation based on recommendations from the previous milestone
+*	Created what the control unit should be outputting for what cycle
+	+	Also have a draft of the control unit in verilog
+*	Integration tests started in verilog
+*	Assembler was rewritten
+*	Compiler is in progress 
+*	Emulator is working
+
+We had our normal 12ish hour meeting on Sunday to work on the control unit for milestone 4.  Wesley made more progress on compiler, did the documentation, and journal.  Alex rewrote the assembler and started writing integration tests in verilog.  Charlie put the control unit into verilog. Andrew now has a working emulator called jSchpim, it has a similar (but better) interface to qtSpim.
