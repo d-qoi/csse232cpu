@@ -286,67 +286,20 @@
 				\multirow{2}{*}{Step} & \multirow{2}{*}{A-Type} & \multicolumn{3}{c|}{B-Type} & \multicolumn{2}{c|}{H-Type} & \multirow{2}{*}{J-Type} \\ \cline{3-7}
 				& & Branches & Read & Write & Schwap & Sudo & \\ \hline
 				\thead{Get \\ instruction} & \multicolumn{7}{c|}{\thead{IR ::= MEM[PC] \\ NextInst ::= MEM[PC+2] \\ PC ::= PC + 2}} \\ \hline
-				\thead{Decode ins-\\truction and \\ get stuff from \\ registers} & \multicolumn{7}{c|}{\thead{R0 ::= reg\#IR[11:8] \\ if(IR[3:0]==0x1) \{R1 ::= NextInst; PC ::= PC + 2\} else \{R1 ::= reg\#IR[7:4]\} \\ ALUout ::= PC + SE(IR[3:0]) \\ Hreg ::= IR[3:0]}} \\ \hline
+				\thead{Decode ins-\\truction and \\ get stuff from \\ registers} & \multicolumn{7}{c|}{\thead{R0 ::= reg\#IR[11:8] \\ if(IR[15:12]==0x1) \{R1 ::= NextInst; PC ::= PC + 2\} else \{R1 ::= reg\#IR[7:4]\} \\ ALUout ::= PC + SE(IR[3:0]) \\ Hreg ::= IR[3:0]}} \\ \hline
 				\thead{Do \\ computation} & \thead{ALUout ::= R0 aluop R1} & \thead{if(R0 aluop R1 == 0) \\ PC ::= ALUout} & \multicolumn{2}{c|}{\thead{ALUout ::= R1 + SE(Hreg$<<$1)}} & \thead{SchLatch\\::= Hreg} & \thead{Change on\\Code\#} & \thead{PC ::= R0 +\\SE(IR[7:0]$<<$1)} \\ \hline
 				\thead{Output} & \thead{reg\#IR[8:11] ::= ALUout} & & \thead{MemRead ::= MEM[ALUout]} & \thead{MEM[ALUout] ::= R0} & \multicolumn{3}{c|}{ } \\ \hline
 				\thead{Output 2} & \multicolumn{2}{c|}{ } & \thead{reg\#IR[8:11] ::= MemRead} & \multicolumn{4}{c|}{ } \\ \hline
 			\end{tabular} \end{center}
 		\subsubsection{Datapath}
 			\begin{center}
-				\includegraphics[width=22.5cm]{datapath}
+				\includegraphics[width=22.85cm]{datapath}
 			\end{center} \end{landscape}
 	\subsection{Control}
-		All of the bits are in hex.  Any where there is a "-" means the control bit(s) doesn't matter.  The tests will be each op code getting passed in on each cycle and asserting each control bit/bus is what is stated in the tables below.
-		\subsubsection{Cycle 0}
-			All instructions use these.
-			\begin{center} \begin{tabular}{| c | c | c | c | c | c | c |} \hline 
-				\rotatebox[origin=c]{90}{PCsrc} & \rotatebox[origin=c]{90}{PCwrite} & \rotatebox[origin=c]{90}{Addr0Src} & \rotatebox[origin=c]{90}{memRead} & \rotatebox[origin=c]{90}{memWrite} & \rotatebox[origin=c]{90}{IRwrite} & \rotatebox[origin=c]{90}{ nextInstWrite } \\ \hline 
-				1 & 1 & 1 & 1 & 0 & 1 & 1\\ \hline
-			\end{tabular} \end{center}
-		\subsubsection{Cycle 1}
-			\begin{center} \begin{tabular}{| c | c | c | c | c | c | c | c | c | c | c | c | c | c | c | c | c | c |} \hline 
-				\rotatebox[origin=c]{90}{Op Code} & \rotatebox[origin=c]{90}{Instruction} & \rotatebox[origin=c]{90}{PCsrc} & \rotatebox[origin=c]{90}{PCwrite} & \rotatebox[origin=c]{90}{Addr0Src} & \rotatebox[origin=c]{90}{memRead} & \rotatebox[origin=c]{90}{memWrite} & \rotatebox[origin=c]{90}{IRwrite} & \rotatebox[origin=c]{90}{ nextInstWrite } & \rotatebox[origin=c]{90}{regStore} & \rotatebox[origin=c]{90}{regWrite} & \rotatebox[origin=c]{90}{imm} & \rotatebox[origin=c]{90}{R0write} & \rotatebox[origin=c]{90}{R1write} & \rotatebox[origin=c]{90}{ALUsrc0} & \rotatebox[origin=c]{90}{ALUsrc1} & \rotatebox[origin=c]{90}{ALUctrl} & \rotatebox[origin=c]{90}{SchwapClk} \\ \hline
-				0 & ALU & - & 0 & - & - & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 1 & 0 & 1 & 0 & 0 \\ \hline
-				1 & ALUI& - & 1 & - & - & 0 & 0 & 0 & 1 & 0 & 1 & 1 & 1 & 0 & 1 & 0 & 0 \\ \hline
-				2 & beq & - & 0 & - & - & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 1 & 0 & 1 & 0 & 0 \\ \hline
-				3 & bne & - & 0 & - & - & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 1 & 0 & 1 & 0 & 0 \\ \hline
-				4 & bgt & - & 0 & - & - & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 1 & 0 & 1 & 0 & 0 \\ \hline
-				5 & blt & - & 0 & - & - & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 1 & 0 & 1 & 0 & 0 \\ \hline
-				6 & jr  & - & 0 & - & - & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 1 & 0 & 1 & 0 & 0 \\ \hline
-				7 & r   & - & 0 & - & - & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 1 & 0 & 1 & 0 & 0 \\ \hline
-				8 & w   & - & 0 & - & - & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 1 & 0 & 1 & 0 & 0 \\ \hline
-				E & rsh & - & 0 & - & - & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 1 & 0 & 1 & 0 & 0 \\ \hline
-				F & sudo& - & 0 & - & - & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 1 & 0 & 1 & 0 & 0 \\ \hline
-			\end{tabular} \end{center}
-		\subsubsection{Cycle 2}
-			\begin{center} \begin{tabular}{| c | c | c | c | c | c | c | c | c | c | c | c | c | c | c | c | c | c |} \hline 
-				\rotatebox[origin=c]{90}{Op Code} & \rotatebox[origin=c]{90}{Instruction} & \rotatebox[origin=c]{90}{PCsrc} & \rotatebox[origin=c]{90}{PCwrite} & \rotatebox[origin=c]{90}{Addr0Src} & \rotatebox[origin=c]{90}{memRead} & \rotatebox[origin=c]{90}{memWrite} & \rotatebox[origin=c]{90}{IRwrite} & \rotatebox[origin=c]{90}{ nextInstWrite } & \rotatebox[origin=c]{90}{regStore} & \rotatebox[origin=c]{90}{regWrite} & \rotatebox[origin=c]{90}{imm} & \rotatebox[origin=c]{90}{R0write} & \rotatebox[origin=c]{90}{R1write} & \rotatebox[origin=c]{90}{ALUsrc0} & \rotatebox[origin=c]{90}{ALUsrc1} & \rotatebox[origin=c]{90}{ALUctrl} & \rotatebox[origin=c]{90}{SchwapClk} \\ \hline
-				0 & ALU & - & 0 & - & - & 0 & 0 & 0 & - & 0 & - & 0 & 0 & 1 & 0 & 1 & 0 \\ \hline
-				1 & ALUI& - & 0 & - & - & 0 & 0 & 0 & - & 0 & - & 0 & 0 & 1 & 0 & 1 & 0 \\ \hline
-				2 & beq & 0 & 1 & - & - & 0 & - & - & - & 0 & - & 0 & 0 & 2 & 0 & 0 & 0 \\ \hline
-				3 & bne & 0 & 1 & - & - & 0 & - & - & - & 0 & - & 0 & 0 & 2 & 0 & 0 & 0 \\ \hline
-				4 & bgt & 0 & 1 & - & - & 0 & - & - & - & 0 & - & 0 & 0 & 2 & 0 & 0 & 0 \\ \hline
-				5 & blt & 0 & 1 & - & - & 0 & - & - & - & 0 & - & 0 & 0 & 2 & 0 & 0 & 0 \\ \hline
-				6 & jr  & 0 & 1 & - & - & 0 & - & - & - & 0 & - & 0 & 0 & 1 & 1 & 0 & 0 \\ \hline
-				7 & r   & - & 0 & - & - & 0 & 0 & 0 & - & 0 & - & 0 & 0 & 2 & 0 & 0 & 0 \\ \hline
-				8 & w   & - & 0 & - & - & 0 & 0 & 0 & - & 0 & - & 0 & 0 & 2 & 0 & 0 & 0 \\ \hline
-				E & rsh & - & 0 & - & - & 0 & - & - & - & 0 & - & 0 & 0 & - & - & 0 & 1 \\ \hline
-				F & sudo& - & 0 & - & - & 0 & - & - & - & 0 & - & 0 & 0 & 0 & 0 & 0 & 0 \\ \hline
-			\end{tabular} \end{center}
-		\subsubsection{Cycle 3}
-			\begin{center} \begin{tabular}{| c | c | c | c | c | c | c | c | c | c | c |} \hline 
-				\rotatebox[origin=c]{90}{Op Code} & \rotatebox[origin=c]{90}{Instruction} & \rotatebox[origin=c]{90}{PCsrc} & \rotatebox[origin=c]{90}{PCwrite} & \rotatebox[origin=c]{90}{Addr0Src} & \rotatebox[origin=c]{90}{memRead} & \rotatebox[origin=c]{90}{memWrite} & \rotatebox[origin=c]{90}{IRwrite} & \rotatebox[origin=c]{90}{ nextInstWrite } & \rotatebox[origin=c]{90}{regStore} & \rotatebox[origin=c]{90}{regWrite} \\ \hline
-				0 & ALU & - & 0 & 0 & 0 & 0 & - & - & 0 & 1 \\ \hline
-				1 & ALUI& - & 0 & 0 & 0 & 0 & - & - & 0 & 1 \\ \hline
-				7 & r   & - & 0 & 0 & 1 & 0 & 0 & - & - & 0 \\ \hline
-				8 & w   & - & 0 & 0 & 0 & 1 & 0 & - & - & 0 \\ \hline
-			\end{tabular} \end{center}
-		\subsubsection{Cycle 4}
-			Only read uses this cycle.
-			\begin{center} \begin{tabular}{| c | c | c | c | c | c | c | c | c |} \hline 
-				\rotatebox[origin=c]{90}{PCsrc} & \rotatebox[origin=c]{90}{PCwrite} & \rotatebox[origin=c]{90}{Addr0Src} & \rotatebox[origin=c]{90}{memRead} & \rotatebox[origin=c]{90}{memWrite} & \rotatebox[origin=c]{90}{IRwrite} & \rotatebox[origin=c]{90}{ nextInstWrite } & \rotatebox[origin=c]{90}{regStore} & \rotatebox[origin=c]{90}{regWrite} \\ \hline
-				- & 0 & - & 0 & 0 & 0 & - & 0 & 1 \\ \hline
-			\end{tabular} \end{center}
+		All of the bits are in hex.  If a control bit is not named, then it is set to the default, all defaults are 0.
+		\begin{center}
+			\includegraphics[width=6.25in]{controlSignals}
+		\end{center}
 	\subsection{Unit Tests and Implementation}
 		\subsubsection{Single 16-bit Registers}
 			\begin{tabular}{ r  r  p{12cm} }
