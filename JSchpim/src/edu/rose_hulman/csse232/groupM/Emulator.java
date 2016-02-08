@@ -34,7 +34,7 @@ public class Emulator {
 			return true;
 		short pc = this.getRegister((short) 3);//pc
 		short inst = mem.getMemory(pc);
-		write("Step: $PC=%04x ==> %04x", pc, inst);
+//		write("Step: $PC=%04x ==> %04x", pc, inst);
 		this.setRegister((short) 3, (short) (pc + 2));
 		this.cmd(inst);
 		this.setRegister((short) 0, (short) 0);
@@ -343,6 +343,16 @@ public class Emulator {
 					return String.format("%s %d", filler, curr & 0xF);
 		default: 	return "???";
 		}
+	}
+
+
+	public String debugInstructions(int lower, int upper) {
+		int line = (upper - lower)/2;
+		System.out.printf("L:%d U:%d LN: %d%n", lower, upper, line);
+		StringBuilder data  = new StringBuilder();
+		for (int i = 0; i < line; i++)
+			data.append(String.format(" %04x: %04x\t%s%n", lower + (i*2), mem.getMemory(lower + (i*2)), disassemble(lower + (i*2))));
+		return data.toString();
 	}
 }
 

@@ -8,15 +8,11 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.HeadlessException;
 import java.awt.Image;
-import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.awt.geom.AffineTransform;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -28,12 +24,10 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.FloatControl;
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
@@ -41,8 +35,6 @@ import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingWorker;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 
 public class MainFrame extends JFrame implements ActionListener {
 	private static final long serialVersionUID = -5979979493835436236L;
@@ -59,6 +51,7 @@ public class MainFrame extends JFrame implements ActionListener {
 	private StaticRegisterPanel staticRegs;
 	private SchwapPanel schwapRegs;
 	private RunEmulatorTask task;
+	private DebugInstructionFrame debug;
 	
 	public void actionPerformed(ActionEvent e) {
 		switch (e.getActionCommand()) {
@@ -70,6 +63,7 @@ public class MainFrame extends JFrame implements ActionListener {
 				emu.setRegister((short) 3, DEFAULT_PC);
 				emu.setRegister((short) 4, DEFAULT_SP);
 				emu.mem.clear();
+				emu.halt = false;
 				update();
 				break;
 			case "Load":
@@ -186,13 +180,15 @@ public class MainFrame extends JFrame implements ActionListener {
 		instructionMem.setPreferredSize(new Dimension(200, 100));
 		dataMem.setEditable(false);
 		this.add(main, BorderLayout.CENTER);
+		debug = new DebugInstructionFrame();
 		update();
+		debug.setVisible(true);
 		this.pack();
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.setVisible(true);
 		emu.write("Initialized emulator @ $SP=%04x, $PC=%04x", emu.getRegister((short) 4), emu.getRegister((short) 3));
 		emu.write("NOTE:\tThe machine code file should have 1 instruction per line in form 0x[Hex value]");
-		emu.write("\tInvalid and empty lines will be ignored.");
+		emu.write("\tInvalid and empty lines will be ignored. Lines that start with * will have a breakpoint placed there.");
 		emu.write("\tStarting the file with #[Hex value], will load the program into the specified hex address");
 		emu.write("Syscall 10 => print\nSyscall 0 ==> exit");
 	}
@@ -216,6 +212,7 @@ public class MainFrame extends JFrame implements ActionListener {
 		// Update Memory - Figure out exact sizes later
 		instructionMem.setText(emu.debugInstructions(10));
 		dataMem.setText(emu.debugMemory(10));
+		debug.update(emu);
 	}
 	
 	public void update(Graphics g) {
@@ -381,6 +378,8 @@ public class MainFrame extends JFrame implements ActionListener {
 				    exc.printStackTrace();
 				}
 				dank_memes = new JFrame("MICAH TAYLOR IS ILLUMINATI CONFIRMED"){
+					private static final long serialVersionUID = 1L;
+
 					@Override
 					public void paint(Graphics g) {
 						Graphics2D g2d = (Graphics2D) g;
