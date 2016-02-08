@@ -204,7 +204,7 @@ class Assembler:
             out = 'jr $pc %s'%inst[1]
 
         elif 'jal' in inst:
-            out = '''cpy $ra 6
+            out = '''cpy $ra 8
             add $ra $pc
             jr $pc %s'''%inst[1]
 
@@ -281,11 +281,11 @@ class Assembler:
             self.program[line-1][0][3] = '2'
         # updating jal
         elif (line > 3 and
-            self.program[line-3][0] == ['cpy','$ra','6'] and
+            self.program[line-3][0] == ['cpy','$ra','8'] and
             self.program[line-1][0] == ['add','$ra','$pc']):
 
             self.program[line-3][0] = ['cpy','$ra','8'] #should either be 8 or A
-            self.program[line-2][1] = '0x0008'
+            self.program[line-2][1] = '0x000a'
 
         self.program.insert(line,[['imm'],sym,'']) #inserting the target for the Copy
         if self.debug:
