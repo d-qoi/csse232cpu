@@ -183,7 +183,7 @@ class Assembler:
                 if not len(inst): #empty line, would break below
                     continue
 
-            self.checkInst(inst)
+            #self.checkInst(inst) Not necessary in assembler create lines
 
             nextLine[0] = inst
 
@@ -204,17 +204,17 @@ class Assembler:
             out = 'jr $pc %s'%inst[1]
 
         elif 'jal' in inst:
-            out = '''cpy $ra 4
+            out = '''cpy $ra 2
             add $ra $pc
-            jr $pc %s'''%inst[1]
+            jr $pc %s'''%inst[1] # this has been changed, I am jumping 2 lines, this is not shifted that is handled in hardware
 
         elif 'psh' in inst:
-            out = '''sub $sp 2
-            w 0($sp) %s'''%inst[1]
+            out = '''sub $sp 1
+            w 0($sp) %s'''%inst[1] # this is now -1 from -2, because blocks and this should be shifted to help
 
         elif 'pop' in inst:
             out = '''r %s 0($sp)
-            add $sp 2'''%inst[1]
+            add $sp 1'''%inst[1] # this is not +1 from +2, see above
 
         self.program.pop(pos)
         out = self.createNextLine(out.split('\n'))
@@ -281,11 +281,11 @@ class Assembler:
             self.program[line-1][0][3] = '2'
         # updating jal
         elif (line > 3 and
-            self.program[line-3][0] == ['cpy','$ra','4'] and
+            self.program[line-3][0] == ['cpy','$ra','2'] and
             self.program[line-1][0] == ['add','$ra','$pc']):
 
-            self.program[line-3][0] = ['cpy','$ra','6'] #should either be 8 or A
-            self.program[line-2][1] = '0x0006'
+            self.program[line-3][0] = ['cpy','$ra','3'] #should this is now 3 lines, rather than 2, may need to change
+            self.program[line-2][1] = '0x0003'
 
         self.program.insert(line,[['imm'],sym,'']) #inserting the target for the Copy
         if self.debug:
@@ -470,7 +470,7 @@ if the outfile is not specified, it will write to out.bin
 if 'debug'(all lower) is passed anywhere, it will toggle debugging mode
 
 if an integer is passed, it will offset the program counter so that all direct jumps
-are recorded accurately
+are recorded accurately, it defaults to 4096 or 0x1000
 
 Version 2.00
 
@@ -485,7 +485,7 @@ Version 2.00
     
     inFile = ''
     outFile = 'out.bin'
-    asm = Assembler(0)
+    asm = Assembler(4096)
     if 'debug' in sys.argv:
         asm.debug = True
     for arg in sys.argv:
