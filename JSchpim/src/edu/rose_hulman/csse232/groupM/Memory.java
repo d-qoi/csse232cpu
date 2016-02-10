@@ -12,7 +12,7 @@ public class Memory {
 	public short[] getMemoryBlock(int address, int shorts) {
 		short[] vals = new short[shorts];
 		for (int i = 0; i < shorts; i++) {
-			vals[i] = getMemory(address + (2 * i));
+			vals[i] = getMemory(address + (i));
 		}
 		return vals;
 	}

@@ -35,7 +35,7 @@ public class Emulator {
 		short pc = this.getRegister((short) 3);//pc
 		short inst = mem.getMemory(pc);
 //		write("Step: $PC=%04x ==> %04x", pc, inst);
-		this.setRegister((short) 3, (short) (pc + 2));
+		this.setRegister((short) 3, (short) (pc + 1));
 		this.cmd(inst);
 		this.setRegister((short) 0, (short) 0);
 		return this.breakpoints.contains(this.getRegister((short) 3));
@@ -58,8 +58,8 @@ public class Emulator {
 				break;
 			case 1: 
 				short pc = this.getRegister((short) 3);//pc
-				short imm = mem.getMemory(pc);
-				this.setRegister((short) 3, (short) (pc + 2));
+				short imm = mem.getMemory(pc); //instuction after
+				this.setRegister((short) 3, (short) (pc + 1)); //skip over the immediate
 				aluImmediate(
 					(short) ((inst & 0x0F00) >> 8), // Destination
 					(short) ((inst & 0x00F0) >> 4), // Source
@@ -75,12 +75,12 @@ public class Emulator {
 						temp,							// Condition
 						(short) ((inst & 0x0F00) >> 8), // Reg0
 						(short) ((inst & 0x00F0) >> 4), // Reg1
-						(short) ((inst & 0x000F) << 1)		// offset
+						(byte) ((inst & 0x000F))	// offset
 					);
 					break;
 			case 6: jumpRegister(
 						(short) ((inst & 0x0F00) >> 8), // Register
-						(short) ((inst & 0x00FF)) 		// Offset
+						(byte) ((inst & 0x00FF)) 		// Offset
 					);
 					break;
 			case 7: temp = 0;							// read
@@ -118,14 +118,8 @@ public class Emulator {
 		this.activeSchwap = s;
 	}
 
-	private void jumpRegister(short reg, short offset) {
-		offset <<= 1;
-		int neg = (0x0100 & offset) >> 8;
-		if (neg == 1) {
-			offset |= 0xFF00;
-			offset = (short) (-1 * (~offset + 1));
-			System.out.printf("Jumping up by %d%n", offset);
-		}
+	private void jumpRegister(short reg, byte offset) {
+		this.write("Jumping to register $%d, offset = %d", reg, offset);
 		this.setRegister((short) 3, (short) (this.getRegister(reg) + offset));
 	}
 
@@ -143,7 +137,7 @@ public class Emulator {
 		}
 	}
 
-	private void branch(short condition, short s, short t, short offset) {
+	private void branch(short condition, short s, short t, byte offset) {
 		boolean branch = false;
 		switch (condition) {
 			case 0: branch = (this.getRegister(s) == this.getRegister(t)); break;
@@ -175,6 +169,7 @@ public class Emulator {
 			case 0xA: setRegister(dest, (short) (this.getRegister(dest) + this.getRegister(src))); break;
 			case 0xB: setRegister(dest, (short) (this.getRegister(dest) - this.getRegister(src))); break;
 			case 0xF: setRegister(dest, this.getRegister(src)); break;
+			default: this.write("Uh-oh spaghetti-os that's not a valid ALU function! (0x%x)", f);
 		}
 	}
 
@@ -244,7 +239,7 @@ public class Emulator {
 		this.setRegister((short) 3, (short) loadTo);
 		for (; i < lines.length; i++) {
 			mem.setMemory(loadTo, (short) Integer.parseInt(lines[i].substring(2), 16));
-			loadTo += 2;
+			loadTo++;
 		}
 	}
 
@@ -258,7 +253,7 @@ public class Emulator {
 		short base = this.getRegister((short) 4); //get sp
 		StringBuilder sb = new StringBuilder();
 		for (short l = 0; l < lines; l++) {
-			short[] ln = this.mem.getMemoryBlock(base - (l * 4), 4);
+			short[] ln = this.mem.getMemoryBlock(base - (l * 4), 8);
 			sb.append(String.format("%s %04X:\t", 
 					(this.breakpoints.contains(
 							(short) (base - (l * 16))
@@ -313,10 +308,10 @@ public class Emulator {
 	}
 	
 	public String disassemble(int addr) {
-		short ppre = mem.getMemory(addr - 4); 
-		short prev = mem.getMemory(addr - 2);
+		short ppre = mem.getMemory(addr - 2); 
+		short prev = mem.getMemory(addr - 1);
 		short curr = mem.getMemory(addr);
-		short next = mem.getMemory(addr + 2);
+		short next = mem.getMemory(addr + 1);
 		if (((prev >> 12) == 1) && !((ppre >> 12) == 1)) // this is an immediate
 			return "<IMM>";
 		// Normal
@@ -347,11 +342,11 @@ public class Emulator {
 
 
 	public String debugInstructions(int lower, int upper) {
-		int line = (upper - lower)/2;
+		int line = (upper - lower);
 		System.out.printf("L:%d U:%d LN: %d%n", lower, upper, line);
 		StringBuilder data  = new StringBuilder();
 		for (int i = 0; i < line; i++)
-			data.append(String.format(" %04x: %04x\t%s%n", lower + (i*2), mem.getMemory(lower + (i*2)), disassemble(lower + (i*2))));
+			data.append(String.format(" %04x: %04x\t%s%n", lower + (i), mem.getMemory(lower + (i)), disassemble(lower + (i))));
 		return data.toString();
 	}
 }

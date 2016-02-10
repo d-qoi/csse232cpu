@@ -360,7 +360,6 @@ public class MainFrame extends JFrame implements ActionListener {
 		public Appendable append(CharSequence arg0, int arg1, int arg2) throws IOException {
 			return this.append(arg0);
 		}
-		
 	}
 	
 	private class IlluminatiWindowListener implements WindowListener {

@@ -35,11 +35,11 @@ public class DebugInstructionFrame extends JFrame {
 	public void update(Emulator emu) {
 		int pc = emu.getRegister((short) 3);
 		int ra = emu.getRegister((short) 5);
-		int lower = pc - 30;
-		int upper = pc + 30;
+		int lower = pc - 15;
+		int upper = pc + 15;
 		//convert to line #s
-		ra = (ra - pc) / 2;
-		pc = (pc - lower) / 2;
+		ra = (ra - pc);
+		pc = (pc - lower);
 		ra += pc;
 		String instructions = emu.debugInstructions(lower, upper);
 		text.setText(instructions);
