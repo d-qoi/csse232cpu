@@ -204,10 +204,7 @@
 				IR       & \thead{Stores the 16-bit instruction that comes from memory} \\ \hline
 				NextInst & \thead{Stores the next 16-bit instruction that comes from memory} \\ \hline
 				PC       & \thead{Program Counter} \\ \hline
-				R0       & \thead{Stores the value that comes out of reg0} \\ \hline
-				R1       & \thead{Stores the value that comes out of reg1} \\ \hline
 				ALUout   & \thead{Stores the value that comes out of the ALU} \\ \hline
-				PCtemp   & \thead{Stores the value that comes out of ALUout for PC if needed} \\ \hline
 				MemRead  & \thead{Same as IR, but is used for values} \\ \hline
 			\end{tabular} \end{center}
 		\subsubsection{Single 4-bit Register}
@@ -218,8 +215,7 @@
 				Control & writable & 1 \\ \hline
 			\end{tabular} \end{center}
 			\begin{center} \begin{tabular}{| l | c |} \hline 
-				\multicolumn{2}{|c|}{Used as:} \\ \hline 
-				Hreg & \thead{Stores IR[3:0]} \\ \hline
+				\multicolumn{2}{|c|}{Used as:} \\ \hline
 				SchLatch & \thead{Stores schwap group number} \\ \hline
 			\end{tabular} \end{center}
 		\subsubsection{SE$<<$1}
@@ -266,37 +262,22 @@
 				Out & Out1  & 16   & Data at Addr1 \\ \hline
 				Control & memRead  & 1 & Set to 1 when data is to be read\\ \hline
 				Control & memWrite & 1 & Set to 1 when data is to be written\\ \hline
-			\end{tabular} \end{center}
-		\subsubsection{Other Control Signals Not Listed}
-			\begin{tabular}{ r p{12cm} }
-				     PCSrc: & Where PC will get it's new value from\\
-				   PCWrite: & Set to 1 if the PC should write the data on its input\\
-				  Addr0src: & Where Addr0 will be getting its input from\\
-				  RegStore: & Where ImmIn0 will be getting its input from\\
-				       Imm: & If R1 should have an immediate loaded into it\\
-				   ALUSrc0: & Where the first input of the ALU will be coming from\\
-				   ALUSrc1: & Where the second input of the ALU will be coming from\\
-				ALUOpContr: & If the function code or ALUContr will decide the ALU op\\
-				  ALUContr: & ALU op from the control unit\\
-			\end{tabular}
-	\newpage \begin{landscape}
-	\subsection{Summary Charts}
-		\subsubsection{RTL}
+			\end{tabular} \end{center} \newpage \begin{landscape}
+	\subsection{Summary Charts - RTL and Datapath}
 			\begin{center} \begin{tabular}{| c | c | c | c | c | c | c | c |} \hline
 				\multirow{2}{*}{Step} & \multirow{2}{*}{A-Type} & \multicolumn{3}{c|}{B-Type} & \multicolumn{2}{c|}{H-Type} & \multirow{2}{*}{J-Type} \\ \cline{3-7}
 				& & Branches & Read & Write & Schwap & Sudo & \\ \hline
-				\thead{Get \\ instruction} & \multicolumn{7}{c|}{\thead{IR ::= MEM[PC] \\ NextInst ::= MEM[PC+2] \\ PC ::= PC + 2}} \\ \hline
-				\thead{Decode ins-\\truction and \\ get stuff from \\ registers} & \multicolumn{7}{c|}{\thead{R0 ::= reg\#IR[11:8] \\ if(IR[15:12]==0x1) \{R1 ::= NextInst; PC ::= PC + 2\} else \{R1 ::= reg\#IR[7:4]\} \\ ALUout ::= PC + SE(IR[3:0]) \\ Hreg ::= IR[3:0]}} \\ \hline
-				\thead{Do \\ computation} & \thead{ALUout ::= R0 aluop R1} & \thead{if(R0 aluop R1 == 0) \\ PC ::= ALUout} & \multicolumn{2}{c|}{\thead{ALUout ::= R1 + SE(Hreg$<<$1)}} & \thead{SchLatch\\::= Hreg} & \thead{Change on\\Code\#} & \thead{PC ::= R0 +\\SE(IR[7:0]$<<$1)} \\ \hline
-				\thead{Output} & \thead{reg\#IR[8:11] ::= ALUout} & & \thead{MemRead ::= MEM[ALUout]} & \thead{MEM[ALUout] ::= R0} & \multicolumn{3}{c|}{ } \\ \hline
+				\thead{Get \\ instruction} & \multicolumn{7}{c|}{\thead{IR ::= MEM[PC]; NextInst ::= MEM[PC+1] \\ PC++}} \\ \hline
+				\thead{Decode} & \multicolumn{7}{c|}{\thead{if(IR[15:12]==0x1) PC++ \\ ALUout ::= PC + SE(IR[3:0])}} \\ \hline
+				\thead{Do \\ computation} & \thead{ALUout::=reg\#IR[11:8]\\aluop reg\#IR[7:4]} & \thead{if(reg\#IR[11:8] aluop\\reg\#IR[7:4] == 0) \\ PC ::= ALUout} & \multicolumn{2}{c|}{\thead{ALUout ::= reg\#IR[7:4] + SE(IR[3:0])}} & \thead{SchLatch\\::= IR[3:0]} & \thead{Change\\on\\Code\#} & \thead{PC::=reg\#IR[11:8]\\+SE(IR[7:0]$<<$1)} \\ \hline
+				\thead{Output} & \thead{reg\#IR[8:11] ::= ALUout} & & \thead{MemRead ::=\\MEM[ALUout]} & \thead{MEM[ALUout]\\::= reg\#IR[11:8]} & \multicolumn{3}{c|}{ } \\ \hline
 				\thead{Output 2} & \multicolumn{2}{c|}{ } & \thead{reg\#IR[8:11] ::= MemRead} & \multicolumn{4}{c|}{ } \\ \hline
 			\end{tabular} \end{center}
-		\subsubsection{Datapath}
 			\begin{center}
-				\includegraphics[width=22.85cm]{datapath}
+				\includegraphics[width=22.25cm]{datapath}
 			\end{center} \end{landscape}
 	\subsection{Control}
-		All of the bits are in hex.  If a control bit is not named, then it is set to the default, all defaults are 0.
+		All of the bits are in hex.  If a control bit is listed below without a value, it is the opposite of it's default. If it is not named, then it is set to it's default, currently, all defaults are 0.
 		\begin{center}
 			\includegraphics[width=6.25in]{controlSignals}
 		\end{center}
