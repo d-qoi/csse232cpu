@@ -99,7 +99,6 @@ class Assembler:
 
     def __init__(self, progStart):
         #import re
-        progStart = 0
         self.progStart = progStart
 
 
