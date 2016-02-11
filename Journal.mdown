@@ -64,12 +64,12 @@ Milestone Five
 
 In this milestone we accomplished the following:
 
-*	Updated the design docs based on recommendations :smiling_imp:
+*	Updated the design docs based on recommendations
 *	Updated the control unit for the changes that we made to the datapath
 *	Updated the Datapath for slight optimizations and to remove extraneous registers
-* 	implemented the separate components and created tests for each set
-*	Finished the assembler worked on the emulator and compiler :smile_cat:
-*	Fixed the Verilog code so that the RTL can be synthesized :triangular_flag_on_post:
+* 	Implemented the separate components and created tests for each set
+*	Finished the assembler worked on the emulator and compiler
+*	Fixed the Verilog code so that the RTL can be synthesized 
 *	attached everything together and we are currently working on debugging.
 
-We had our regular Sunday meeting and finished most of the separate implementation and then spend Monday to Wednesday attaching everything together. Alex finished writing the Assembler and the Memory/PC/Regfile part of the CPU, Charlie finished the control unit, Andrew updated and worked on the assembler as well as finished the ALU, and Wesley L (:grinning:) worked on the documentation and compiler.
+We had our regular Sunday meeting and finished most of the separate implementation and then spend Monday to Wednesday attaching everything together. Alex finished writing the Assembler and the Memory/PC/Regfile part of the CPU, Charlie finished the control unit, Andrew updated and worked on the assembler as well as finished the ALU, and Wesley worked on the documentation and compiler.
