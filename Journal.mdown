@@ -72,4 +72,4 @@ In this milestone we accomplished the following:
 *	Fixed the Verilog code so that the RTL can be synthesized 
 *	attached everything together and we are currently working on debugging.
 
-We had our regular Sunday meeting and finished most of the separate implementation and then spend Monday to Wednesday attaching everything together. Alex finished writing the Assembler and the Memory/PC/Regfile part of the CPU, Charlie finished the control unit, Andrew updated and worked on the assembler as well as finished the ALU, and Wesley worked on the documentation and compiler.
+We had our regular Sunday meeting and finished most of the separate implementation and then spend Monday to Wednesday attaching everything together. Alex finished writing the Assembler and the Memory/PC/Regfile part of the CPU, Charlie finished the control unit, Andrew updated and worked on the assembler as well as finished the ALU, and Wesley worked on the documentation and compiler, which is almost able to compile relPrime and gcd.
