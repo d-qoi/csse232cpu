@@ -1,12 +1,12 @@
 # This file will run through all ALU operations on T0 and T2
 cpy $t0 $0 10
 cpy $t1 $0 7
-# loading 1010 and 0101
+# loading 1010 and 0111
 
 cpy $s0 $0
 add $s0 $t0
 and $s0 $t1
-# $s0 would be 0
+# $s0 would be 20
 
 cpy $s0 $0
 add $s0 $t0
@@ -41,12 +41,12 @@ sll $s0 1
 cpy $s0 $0
 add $s0 $t0
 srl $s0 1
-#should be 7
+#should be 5
 
 cpy $s0 $0
 add $s0 $t0
 sra $s0 1
-#should be 7
+#should be 5
 
 cpy $s0 $0
 add $s0 $t0
