@@ -56,7 +56,7 @@ class Assembler:
 
     PseudoList = {'jal','j','psh','pop'} # Please update and see the method pseudoExpandHelper
 
-    WarningList = {'$at','$at1','$pc'}
+    WarningList = {'$a0','$a1','$pc'}
     Warnings = []
     Symbols = []
 
@@ -215,14 +215,16 @@ class Assembler:
             out = '''r %s 0($sp)
             add $sp 1'''%inst[1] # this is not +1 from +2, see above
 
-        self.program.pop(pos)
+        label = self.program.pop(pos)[2] # if there is a label, preserve it
         out = self.createNextLine(out.split('\n'))
+        out[0][2] = label
         if self.debug:
+            print("Label: ",label)
             print(out)
         out.reverse() # to be inserted backwards for simple for loop
         for i in out:
             self.program.insert(pos,i)
-        
+            
 
     def expandPseudoInst(self):
         programCounter = 0;
@@ -246,6 +248,8 @@ class Assembler:
             sym = self.program[line][2]
             if sym: #pulling the immediate, if there is one, add it
                 out[sym] = line
+        if self.debug:
+                print("temp sym dict:\n",out)
         return out
 
     def branchToJump(self, line):
@@ -479,7 +483,7 @@ Version 2.00
         print(helpPrint) 
         sys.exit(0)
 
-    #sys.argv = ["SimplePrograms\SIMPLEPROCEDURES.asm" ,"SimplePrograms\out\SIMPLEPROCEDURES.bin", "4096","debug"]
+    #sys.argv = ["SimplePrograms\JumpWat.asm" ,"SimplePrograms\out\JumpWat.bin", "0","debug"]
     #sys.argv = ['Tests.asm','debug']
     
     inFile = ''
