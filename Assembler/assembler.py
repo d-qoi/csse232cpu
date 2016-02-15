@@ -90,7 +90,7 @@ class Assembler:
 ##    Branches, the symbol is a 4bit offset, this is unsigned,
 ##        If the symbol offset is larger than 16, the branch is converted to a jump,
 ##    jumps, the symbol is an 8 bit offset, this is signed
-##        If the symbol is to big, or small, the jump is converted to a direct jump
+##        If the symbol is to big, or small, the jump is converted to a direct jumpRo
 ##
 ##    constant the symbol is the line number * 2 plus the program start offset
 ##        This is a result of a jump being converted to a big jump.
@@ -235,7 +235,7 @@ class Assembler:
                 if not self.program[programCounter][0][2] in self.binaryMapRegs or len(self.program[programCounter][0]) is 4:
                     imm = int(self.program[programCounter][0][-1])
                     # this is adding in the immediate lines, this should be the case for ALL immeadiates that are passed to the assembler by the programmer.
-                    self.program.insert(programCounter+1,[['imm'],'0x%04x'%imm,''])
+                    self.program.insert(programCounter+1,[['imm'],'0x%04x'%(0xFFFF & imm),''])
 
             programCounter += 1 # Still not missing this
 
@@ -429,7 +429,7 @@ class Assembler:
                 self.JType(programCounter,symDict)
             elif self.program[programCounter][0][0] == 'imm':
                 if self.program[programCounter][1] in symDict:
-                    self.program[programCounter][1] = '0x%04x'%(symDict[self.program[programCounter][1]] + self.progStart)
+                    self.program[programCounter][1] = '0x%04x'%((symDict[self.program[programCounter][1]] + self.progStart) & 0xFFFF)
             if self.debug:
                 print(self.program[programCounter])
             programCounter += 1
