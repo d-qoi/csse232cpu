@@ -1,5 +1,5 @@
-cpy $sp 4090
+cpy $sp 4090 #setting the SP because it is not currently set
 cpy $t0 7
-w $t0 0($sp)
+w 0($sp) $t0
 cpy $t0 $0
-r 0($sp) $t0
+r $t0 0($sp)

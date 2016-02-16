@@ -359,22 +359,22 @@ class Assembler:
         inst = self.program[line][0]
         #read 
         # r d o(s)
-        # r d s o
+        # r s d o
 
         # write
-        # w o(d) s
-        # w d s o
+        # w o(a) s
+        # w a s o
         if inst[0] == 'r':
             self.program[line][1] = ('0x' + 
-                                    hex(self.binaryMapInst[inst[0]])[2:] + # inst 0
-                                    hex(self.binaryMapRegs[inst[1]])[2:] + # dest 1
-                                    hex(self.binaryMapRegs[inst[3]])[2:] + # source 3
+                                    hex(self.binaryMapInst[inst[0]])[2:] + # op 0
+                                    hex(self.binaryMapRegs[inst[3]])[2:] + # address 1
+                                    hex(self.binaryMapRegs[inst[1]])[2:] + # dest 3
                                     hex(int(inst[2]))[2:])                 # offset 2
                                     
         elif inst[0] == 'w':
             self.program[line][1] = ('0x' + 
-                                    hex(self.binaryMapInst[inst[0]])[2:] + # inst 0
-                                    hex(self.binaryMapRegs[inst[2]])[2:] + # dest 2
+                                    hex(self.binaryMapInst[inst[0]])[2:] + # op 0
+                                    hex(self.binaryMapRegs[inst[2]])[2:] + # address 2
                                     hex(self.binaryMapRegs[inst[3]])[2:] + # source 3
                                     hex(int(inst[1]))[2:])                 # offset 1
         
