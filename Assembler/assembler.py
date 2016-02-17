@@ -54,7 +54,7 @@ class Assembler:
     JTypeList = {'jr'}
 
 
-    PseudoList = {'jal','j','psh','pop'} # Please update and see the method pseudoExpandHelper
+    PseudoList = {'jal','j','psh','pop','nop','bge','ble'} # Please update and see the method pseudoExpandHelper
 
     WarningList = {'$a0','$a1','$pc'}
     Warnings = []
@@ -106,7 +106,7 @@ class Assembler:
         if not inst[0] in self.binaryMapInst.keys()|self.PseudoList:
             raise Exception('Instruction not in instructions', inst[0])
         for i in inst:
-            if '$' in i and not i in self.binaryMapRegs:
+            if '$' in i and not i in self.binaryMapRegs and not '@' in i :
                 raise Exception('Register not real',i,'at line',len(self.program),'in',inst)
             elif '$' in i and i in self.WarningList:
                 self.Warnings.append("Manipulating {0} on line {1} @ {2}".format(i,len(self.program), inst))
@@ -215,6 +215,45 @@ class Assembler:
             out = '''r %s 0($sp)
             add $sp 1'''%inst[1] # this is not +1 from +2, see above
 
+        elif 'nop' in inst:
+            out = 'and $0 $0'
+
+        elif 'bge' in inst:
+            out = '''cpy $a0 %s
+            slt $a0 %s
+            beq $a0 $z0 %s'''%(inst[1], inst[2], inst[3])
+
+        elif 'ble' in inst:
+            out = '''cpy $a0 %s
+            slt $a0 %s
+            beq $a0 $z0 %s'''%(inst[2], inst[1], inst[3])
+
+        elif '@' in inst[1] and '@' in inst[2]:
+            n = inst[1][4] # ops $h0@n $h1@m
+            m = inst[2][4]
+            h0 = inst[1][0:3]
+            h1 = inst[2][0:3]
+            out = '''rsh %s
+            cpy $a0 %s
+            rsh %s
+            %s %s $a0'''%(n,h1,m,inst[0],h0)
+
+        elif '@' in inst[1]:
+            n = inst[1][4]
+            h0 = inst[1][0:3]
+            out = '''rsh %s
+            %s %s %s'''%(n,inst[0],h0,inst[2])
+
+        elif '@' in inst[2]:
+            m = inst[2][4]
+            h1 = inst[2][0:3]
+            out = '''rsh %s
+            %s %s %s'''%(m,inst[0],inst[1],h1)
+
+        else:
+            return
+
+
         label = self.program.pop(pos)[2] # if there is a label, preserve it
         out = self.createNextLine(out.split('\n'))
         out[0][2] = label
@@ -231,6 +270,10 @@ class Assembler:
         while programCounter < len(self.program): #really important that this is not a for loop
             if self.program[programCounter][0][0] in self.PseudoList:
                 self.pseudoExpandHelper(self.program[programCounter][0], programCounter)
+            elif len(self.program[programCounter][0]) > 2:
+                if ('$h' in self.program[programCounter][0][1] or
+                    '$h' in self.program[programCounter][0][2]):
+                    self.pseudoExpandHelper(self.program[programCounter][0], programCounter)
 
             # for adding the immediates after the add, Probably don't need to do this here, but I am regardkess because idk, why not?
             if self.program[programCounter][0][0] in self.ATypeList:
@@ -483,7 +526,7 @@ Version 2.10
         print(helpPrint) 
         sys.exit(0)
 
-    #sys.argv = ["SimplePrograms\JumpWat.asm" ,"SimplePrograms\out\JumpWat.bin", "0","debug"]
+    #sys.argv = ["newSchwapTest.asm" ,"newSchwapTest.bin", "0","debug"]
     #sys.argv = ['Tests.asm','debug']
     
     inFile = ''
