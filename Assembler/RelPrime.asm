@@ -1,3 +1,15 @@
+setup:
+	rsh 8
+	cpy $h0 10
+	jal RelPrime
+	rsh 9
+	cpy $t0 $h0
+	cpy $t1 $h0
+	cpy $t2 $h0
+	cpy $t3 $h0
+	sudo 0
+	and $0 $0
+	and $0 $0
 RelPrime:
 	rsh	4				#set schwap
 	cpy	$h0 $ra			#save $ra
