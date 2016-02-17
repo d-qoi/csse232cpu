@@ -1,4 +1,4 @@
-# Version 2 of the Schwap Assembler
+# Version 2.1 of the Schwap Assembler
 
 ## Simple programs to test the CPU
 Provided to help test the assembler as well
@@ -15,7 +15,19 @@ Provided to help test the assembler as well
 	* will test jal and ra
 	* was mostly a test for the assembler, but it will force the CPU to make a lot of jumps.
 	* no branching
-
+5. everything
+	* tests some of everything,
+	* if a comparison fails or jump fails, it will halt the program in the middle.
+6. JumpWat
+	* tests jumping
+	* weird pattern for error finding
+7. sillyMemoryTest
+	* Tests Memory read and write
+8. SimpleBranchTest
+	* Test branching
+	* loops if failure state
+9. Tests
+	* testing the assembler, don't actually recommend running.
 
 ### Notes
 
@@ -28,15 +40,7 @@ At this time there are a few assumptions
 2. All immediates are in base 10, the current version of the assembler doesn't like hex yet.
 
 
-Everything in the out file has been assembled with **4096** as the offset.
-This assumes that the program will start at 1000, and travel up in memory
-eg: 1000, 1002, 1004...
-This mean all non PC relative jumps will be jumping to something big if that is not taken into account.
-
-If this needs to be changed, re-assemble things, it is easy to use the python script, it has help text. Pass it -h or help or run it with no arguments to see it.
-
-This does handle the fact that the programs do grow as the numbers being jumped or branched increase, this does deal with it, if the program appears bigger than was initially predicted, that is because one of the edge cases was hit, either a jump grew outside of the offset range, or a branch did. In rare cases, both can happen. (See Test3 symbolic jump in SimpleProcedures.*)
-
-### Predicted things
-
-There may be a bug with the reading from memory, or writing to memory. I am not sure, but it appeared to change something that I was not expecting it to change.
+## RelPrime
+This is the unit test for this project.
+It will find an int that is relativly prime to the one that it is passed
+There is a simple wrapper for this procedure, it start at 10, 9 is relativly prime to it.

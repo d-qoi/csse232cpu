@@ -475,7 +475,7 @@ if 'debug'(all lower) is passed anywhere, it will toggle debugging mode
 if an integer is passed, it will offset the program counter so that all direct jumps
 are recorded accurately, it defaults to 4096 or 0x1000
 
-Version 2.00
+Version 2.10
 
 """
 
