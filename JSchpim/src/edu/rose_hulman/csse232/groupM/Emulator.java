@@ -6,6 +6,7 @@ import java.util.ArrayList;
 public class Emulator {
 	Memory mem;
 	Register[] registers;
+	Register scp;
 	short activeSchwap;
 	Appendable console;
 	boolean halt;
@@ -14,6 +15,7 @@ public class Emulator {
 	public Emulator(short sp, short pc) {
 		halt = false;
 		mem = new Memory();
+		scp = new Register();
 		this.registers = new Register[16];
 		for (short i = 0; i < 12; i++)
 			this.registers[i] = new Register();
@@ -91,27 +93,40 @@ public class Emulator {
 						(short) ((inst & 0x00F0) >> 4), // Source
 						(short) ((inst & 0x000F))		// Offset
 					);
+			case 0xA: SCP(); break;
 			case 0xE: setSchwap((short) ((inst & 0x000F))); break;
 			case 0xF: syscall((short) ((inst & 0x000F))); break;
 		}
 	}
 	
+	/** 
+	 * Switches out stuff
+	 */
+	private void SCP() {
+		Register temp = this.scp;
+		this.scp = this.registers[2];
+		this.registers[2] = temp;
+	}
+
+
 	private void syscall(short s) {
 		write("Syscall %d", s);
-		switch(s) {
-			case 10:
-				write("%04x\t%04x\t%04x\t%04x",
-					this.getSchwapRegister((short) 12, (short) 12),
-					this.getSchwapRegister((short) 12, (short) 13),
-					this.getSchwapRegister((short) 12, (short) 14),
-					this.getSchwapRegister((short) 12, (short) 15)
-				);
-				break;
-			case 0:
-				write("Shutdown received. Halting emulator.");
-				halt = true;
-				break;
-		}
+//		switch(s) {
+//			case 10:
+//				write("%04x\t%04x\t%04x\t%04x",
+//					this.getSchwapRegister((short) 12, (short) 12),
+//					this.getSchwapRegister((short) 12, (short) 13),
+//					this.getSchwapRegister((short) 12, (short) 14),
+//					this.getSchwapRegister((short) 12, (short) 15)
+//				);
+//				break;
+//			case 0:
+//				write("Shutdown received. Halting emulator.");
+//				halt = true;
+//				break;
+//		}
+		SCP();
+		this.setRegister((short) 3, s);
 	}
 	
 	private void setSchwap(short s) {
@@ -119,7 +134,7 @@ public class Emulator {
 	}
 
 	private void jumpRegister(short reg, byte offset) {
-		this.write("Jumping to register $%d, offset = %d", reg, offset);
+//		this.write("Jumping to register $%d, offset = %d", reg, offset);
 		this.setRegister((short) 3, (short) (this.getRegister(reg) + offset));
 	}
 
@@ -236,7 +251,7 @@ public class Emulator {
 			i++;
 		}
 		write("Loading data to address: %04x", loadTo);
-		this.setRegister((short) 3, (short) loadTo);
+		//this.setRegister((short) 3, (short) loadTo);
 		for (; i < lines.length; i++) {
 			mem.setMemory(loadTo, (short) Integer.parseInt(lines[i].substring(2), 16));
 			loadTo++;
@@ -244,7 +259,7 @@ public class Emulator {
 	}
 
 	/**
-	 * Gets 8 bytes per line at data memory for {@code lines} number of lines. <br>
+	 * Gets 4 shorts per line at data memory for {@code lines} number of lines. <br>
 	 * 
 	 * @param lines
 	 * @return String representation, lines lines long.
@@ -253,7 +268,10 @@ public class Emulator {
 		short base = this.getRegister((short) 4); //get sp
 		StringBuilder sb = new StringBuilder();
 		for (short l = 0; l < lines; l++) {
-			short[] ln = this.mem.getMemoryBlock(base - (l * 4), 8);
+			short mem = (short) (base - (l * 4));
+			if (mem < base) // bottom of stack reached;
+				break;
+			short[] ln = this.mem.getMemoryBlock(base - (l * 4), 4);
 			sb.append(String.format("%s %04X:\t", 
 					(this.breakpoints.contains(
 							(short) (base - (l * 16))
@@ -332,6 +350,8 @@ public class Emulator {
 		case 8:		return String.format("w 0x%x($%d), $%d", curr & 0xF, (curr>>8) & 0xF, (curr>>4) & 0xF);
 		//Jump register
 		case 6:		return String.format("jr 0x%x($%d)", curr & 0xFF, (curr>>8) & 0xF);
+		//SCP
+		case 10: 	return "scp";
 		//H-Types
 		case 14:	filler = "rsh";
 		case 15:	filler = (filler == null)?"sudo":filler;

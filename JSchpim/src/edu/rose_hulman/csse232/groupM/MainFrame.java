@@ -39,8 +39,9 @@ import javax.swing.SwingWorker;
 public class MainFrame extends JFrame implements ActionListener {
 	private static final long serialVersionUID = -5979979493835436236L;
 	
-	public static final short DEFAULT_SP = (short) 0xfff0;
-	public static final short DEFAULT_PC = (short) 0x1000;
+	public static final short DEFAULT_SP = (short) 0xffff;
+	public static final short DEFAULT_PC = (short) 0x0000;
+	public static final short DEFAULT_PM = (short) 0x1000;
 	
 	private Emulator emu;
 	
@@ -76,7 +77,7 @@ public class MainFrame extends JFrame implements ActionListener {
 						Scanner sc = new Scanner(chooser.getSelectedFile());
 						ArrayList<String> al = new ArrayList<String>();
 						ArrayList<Integer> breakPoints = new ArrayList<Integer>();
-						al.add("#" + Integer.toHexString(MainFrame.DEFAULT_PC));
+						al.add("#" + Integer.toHexString(MainFrame.DEFAULT_PM));
 						String str;
 						int line = 0;
 						while (sc.hasNextLine()) {
