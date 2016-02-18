@@ -56,6 +56,7 @@ memory_initialization_vector=
             for line in code:
                 dest.write(line)
                 dest.write(',\n')
+            dest.write('0000;')
 
                 
 

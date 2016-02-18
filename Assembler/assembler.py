@@ -25,6 +25,7 @@ class Assembler:
                 'jr':0x6,
                 'r':0x7,
                 'w':0x8,
+                'scp':0xA,
                 'rsh':0xE,
                 'sudo':0xF}
 
@@ -50,7 +51,7 @@ class Assembler:
                 'xor','not','tsc','cpy'}
 
     BTypeList = {'beq','bnq','bne','bgt','blt','r','w'}
-    HTypeList = {'rsh','sudo'}
+    HTypeList = {'rsh','sudo','scp'}
     JTypeList = {'jr'}
 
 
@@ -236,7 +237,7 @@ class Assembler:
             out = '''rsh %s
             cpy $a0 %s
             rsh %s
-            %s %s $a0'''%(n,h1,m,inst[0],h0)
+            %s %s $a0'''%(m,h1,n,inst[0],h0)
 
         elif '@' in inst[1]:
             n = inst[1][4]
@@ -437,10 +438,13 @@ class Assembler:
 
     def HType(self, line):
         inst = self.program[line][0]
-        self.program[line][1] = ('0x' + 
-                                hex(self.binaryMapInst[inst[0]])[2:] + 
-                                '00' +
-                                hex(int(inst[1]))[2:])
+        if 'scp' in inst:
+            self.program[line][1] = '0xa000'
+        else:
+            self.program[line][1] = ('0x' + 
+                                    hex(self.binaryMapInst[inst[0]])[2:] + 
+                                    '00' +
+                                    hex(int(inst[1]))[2:])
 
     def JType(self,line, symDict):
         inst = self.program[line][0]
@@ -518,7 +522,7 @@ if 'debug'(all lower) is passed anywhere, it will toggle debugging mode
 if an integer is passed, it will offset the program counter so that all direct jumps
 are recorded accurately, it defaults to 4096 or 0x1000
 
-Version 2.10
+Version 2.11
 
 """
 
