@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import re
 class Assembler:
 
@@ -204,7 +205,7 @@ class Assembler:
             out = 'jr $pc %s'%inst[1]
 
         elif 'jal' in inst:
-            out = '''cpy $ra 2
+            out = '''cpy $ra 1
             add $ra $pc
             jr $pc %s'''%inst[1] # this has been changed, I am jumping 2 lines, this is not shifted that is handled in hardware
 
@@ -230,8 +231,8 @@ class Assembler:
             beq $a0 $z0 %s'''%(inst[2], inst[1], inst[3])
 
         elif '@' in inst[1] and '@' in inst[2]:
-            n = inst[1][4] # ops $h0@n $h1@m
-            m = inst[2][4]
+            n = inst[1][4:] # ops $h0@n $h1@m
+            m = inst[2][4:]
             h0 = inst[1][0:3]
             h1 = inst[2][0:3]
             out = '''rsh %s
@@ -328,7 +329,7 @@ class Assembler:
             self.program[line-1][0][3] = '2'
         # updating jal
         elif (line > 3 and
-            self.program[line-3][0] == ['cpy','$ra','2'] and
+            self.program[line-3][0] == ['cpy','$ra','1'] and
             self.program[line-1][0] == ['add','$ra','$pc']):
 
             self.program[line-3][0] = ['cpy','$ra','3'] #should this is now 3 lines, rather than 2, may need to change
