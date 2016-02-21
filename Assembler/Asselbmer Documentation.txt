@@ -1,0 +1,81 @@
+Assembler Documentation:
+	Using the assembler:
+		The use of this program:
+			assembler infile.asm <outfile.bin> <Program Start offset> <debug>
+			-h or help:     Prints this message
+
+			if the outfile is not specified, it will write to out.bin
+			if 'debug'(all lower) is passed anywhere, it will toggle debugging mode
+
+			if an integer (in decimal) is passed, it will offset the program counter so that all direct jumps
+			are recorded accurately, it defaults to 4096(or 0x1000)
+				This is highly recommended, do not touch unless you know what you are doing.
+
+	Supported Pseudo Instructions:
+		jal: Jump and link
+			Jump and link, it will set RA to the PC after this instruction call
+			It takes a label.
+			Example:
+				jal label
+
+		j: Jump
+			Jumps to a label
+			This instruction is extended to jr $pc label.
+			Example:
+				j label
+
+		psh: Push
+			Decrease the stack pointer by 1 and push a value in a register to the user stack.
+			Example:
+				psh $t0
+
+		pop: Pop
+			Reads a value from the stack and add 1 to the stack pointer.
+			Example:
+				pop $t0
+
+		nop: No Operator
+			Becomes and $0 $0.
+			Example:
+				nop
+
+		bge: Branch if Greater Than or Equal To.
+			Branch to a label if the value in register one is grater than or equal to the value in the second register
+			Example:
+				bge $t0 $t1 label
+
+		ble: Branch if Less Than or Equal To.
+			Branch to a label if the value in register one is less than or equal to the value in the second register
+			Example:
+				bge $t0 $t1 label
+
+	Supported shortcuts:
+		Schwap:
+			All instructions that use schwap registers can use the notation $hn@m
+			where $hn is the target schwap register, and m is the target schwap group.
+			Example:
+				add $h0@5 $t0
+
+				This is translated to:
+					rsh 5
+					add $h0 $t0
+
+				This is not dependent on the position of the register in the instruction
+
+			This can also be used if both registers are schwap.
+			Example:
+				slt $h0@5 $h0@8
+
+				this is translate to:
+					rsh 8
+					cpy $a0 $h0 	# $a0 is an assembler temporary
+ 					rsh 5
+					slt $h0 $a0 
+
+			This should work with all instructions, but has only been throughly tested with ALU operations
+
+	Adding Pseudo instructions:
+		If you REALLY want to add pseudo instructions, there is documentation within the Python file:
+			Do remember to both add the instruction to the PseudoList at the top of the file, and to add the case in 
+			pseudoExpandHelper. Follow the patterns given.
+			Any modification to the assembler code voids all warranty.

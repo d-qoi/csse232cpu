@@ -97,6 +97,15 @@ user code       [4096:10000) <can be more, your call>
 user space      [10000:15480)
 stack           [15480:20480] <will underflow if you let it, grows down>
 
+Example Use:
+    programLoader.py relPrimeWithIO.bin
+
+    This will create a memory.coe file
+    This will use the kernel.bin in the current directory.
+
+YOU MUST HAVE A KERNEL BIN! name the program kernel.bin if you don't, 
+it is hacky but necessary
+
 """
     if '-h' in sys.argv or 'help' in sys.argv:
         print(helpPrint)
