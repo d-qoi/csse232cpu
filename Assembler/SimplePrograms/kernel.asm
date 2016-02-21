@@ -15,6 +15,7 @@
 	and $0 $0
 	and $0 $0
 sudo0:
+	cpy $sp 20480
 	scp
 sudo1:
 	scp

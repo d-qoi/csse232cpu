@@ -1,6 +1,6 @@
 j 0b2f0160-c6b8-49cc-a28e-6b985632a33c
 main:
-cpy $t1 5
+cpy $t1 10
 cpy $h0@8 $t1
 psh $t0
 psh $t1
