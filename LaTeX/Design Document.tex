@@ -193,14 +193,14 @@
 \section{RTL and Datapath}
 	\subsection{Components}
 		\subsubsection{Single 16-bit Register}
-			\begin{center} \begin{tabular}{| l | l | c |} \hline 
-				I/O & Name & Size \\ \hline 
+			\begin{center} \begin{tabular}{| l | l | c |} \hline
+				I/O & Name & Size \\ \hline
 				In  & in  & 16 \\ \hline
 				Out & out & 16 \\ \hline
 				Control & write & 1 \\ \hline
 			\end{tabular} \end{center}
-			\begin{center} \begin{tabular}{| l | c |} \hline 
-				\multicolumn{2}{|c|}{Used as:} \\ \hline 
+			\begin{center} \begin{tabular}{| l | c |} \hline
+				\multicolumn{2}{|c|}{Used as:} \\ \hline
 				IR       & \thead{Stores the 16-bit instruction that comes from memory} \\ \hline
 				NextInst & \thead{Stores the next 16-bit instruction that comes from memory} \\ \hline
 				PC       & \thead{Program Counter} \\ \hline
@@ -208,33 +208,33 @@
 				MemRead  & \thead{Same as IR, but is used for values} \\ \hline
 			\end{tabular} \end{center}
 		\subsubsection{Single 4-bit Register}
-			\begin{center} \begin{tabular}{| l | l | c |} \hline 
-				I/O & Name & Size \\ \hline 
+			\begin{center} \begin{tabular}{| l | l | c |} \hline
+				I/O & Name & Size \\ \hline
 				In  & in   & 4 \\ \hline
 				Out & out  & 4 \\ \hline
 				Control & writable & 1 \\ \hline
 			\end{tabular} \end{center}
-			\begin{center} \begin{tabular}{| l | c |} \hline 
+			\begin{center} \begin{tabular}{| l | c |} \hline
 				\multicolumn{2}{|c|}{Used as:} \\ \hline
 				SchLatch & \thead{Stores schwap group number} \\ \hline
 			\end{tabular} \end{center}
 		\subsubsection{SE$<<$1}
 			\begin{center} Sign extends and then shifts it to the left 1 \end{center}
-			\begin{center} \begin{tabular}{| l | l | c |} \hline 
-				I/O & Name & Size \\ \hline 
+			\begin{center} \begin{tabular}{| l | l | c |} \hline
+				I/O & Name & Size \\ \hline
 				In  & in   & * \\ \hline
 				Out & out  & * \\ \hline
 			\end{tabular} \end{center}
 		\subsubsection{16-bit Adder}
-			\begin{center} \begin{tabular}{| l | l | c | l |} \hline 
-				I/O & Name     & Size & Description \\ \hline 
+			\begin{center} \begin{tabular}{| l | l | c | l |} \hline
+				I/O & Name     & Size & Description \\ \hline
 				In  & A        & 16   & First input \\ \hline
 				In  & B        & 16   & Second input \\ \hline
 				Out & R        & 16   & Result \\ \hline
 			\end{tabular} \end{center}
 		\subsubsection{ALU}
-			\begin{center} \begin{tabular}{| l | l | c | l |} \hline 
-				I/O & Name     & Size & Description \\ \hline 
+			\begin{center} \begin{tabular}{| l | l | c | l |} \hline
+				I/O & Name     & Size & Description \\ \hline
 				In  & A        & 16   & First input \\ \hline
 				In  & B        & 16   & Second input \\ \hline
 				Out & R        & 16   & Result \\ \hline
@@ -243,7 +243,7 @@
 			\end{tabular} \end{center}
 		\subsubsection{Register File}
 			\begin{center} \begin{tabular}{| l | l | c | l |} \hline
-				I/O & Name       & Size & Description \\ \hline 
+				I/O & Name       & Size & Description \\ \hline
 				In  & regID0     & 4    & ID for first register \\ \hline
 				In  & regID1     & 4    & ID for second register \\ \hline
 				In  & ImmIn0     & 16   & Data to write to regID1 \\ \hline
@@ -253,8 +253,8 @@
 				Control & RegWrite & 1  & If data can be written to regID1\\ \hline
 			\end{tabular} \end{center}
 		\subsubsection{Main Memory}
-			\begin{center} \begin{tabular}{| l | l | c | l |} \hline 
-				I/O & Name  & Size & Description \\ \hline 
+			\begin{center} \begin{tabular}{| l | l | c | l |} \hline
+				I/O & Name  & Size & Description \\ \hline
 				In  & Addr0 & 16   & Address for data\\ \hline
 				In  & Addr1 & 16   & Address for data\\ \hline
 				In  & Store & 16   & Stores data at Addr0\\ \hline
@@ -404,65 +404,27 @@
 				                & 3. & Pass in data to Store and a valid memory address and set memWrite to 0 $\Rightarrow$ The the data from Store should not have been written to memory\\
 			\end{tabular}
 	\subsection{Integration Tests}
-		Almost all of the tests require almost all of the components so it is reccomended the entire data path be built to run these tests.
-		\subsubsection{Get instruction}
+		\subsubsection{PC and Memory}
 			\begin{tabular}{ r  p{15cm} }
-				1. & Give PC a memory address with an instruction\\
-				2. & Toggle memRead and the instruction at the given address, as well as the next instruction, should now be in IR (and the MemRead register) and NextInst respectively\\
-				3. & PC should have been incremented by 2 so the process can be repeated\\
+				1. & Set PC to some initial value for testing\\
+				2. & Clock PCWrite at least 16 times\\
+				3. & Write data to those 16 addresses and set PC to the original value for testing\\
+				4. & Clock PCWrite so it will iterate over the values put into memory, also check that the outputs from memory are correct\\
 			\end{tabular}
-		\subsubsection{Decode instruction and get stuff from registers}
+		\subsubsection{Register File and ALU}
 			\begin{tabular}{ r  p{15cm} }
-				1. & IR and NextInst should be populated with a current instruction and its next instruction respectively\\
-				2. & R0 should get the value from the register pointed to by IR[11:8]\\
-				3. & If IR[3:0] is 0x1 then R1 should get the value in NextInst and PC should be incremented by 2, if IR[3:0] is not 0x1 it should get the value in the register pointed to by IR[7:4]\\
-				4. & ALUout should get PC added to IR[15:12] which has been sign extended and shifted left by 1\\
-				5. & Hreg should get IR[3:0] \\
+				1. & Write test data to each register in the register file\\
+				2. & Do operations using the ALU to the values in the register file using every register and ALU op code\\
+				3. & Check all of the values in the register file to ensure they are correct\\
 			\end{tabular}
-		\subsubsection{Do computation}
-			\begin{tabular}{ r  r  p{12.5cm} }
-				    A-Type: & 1. & R0 and R1 should get some values, ALUop should be set to a valid ALU op code\\
-				            & 2. & ALUout should now get R0 and R1 combined in the way the function/ALU op code intended\\
-				            & 3. & This should be repeated for every valid ALU op code\\
-				            &    & \\
-				  Branches: & 1. & R0 and R1 should get some values, ALUop should be set to the subtract ALU op code\\
-				            & 2. & If ALUout is 0 then PC should now get ALUout\\
-				            &    & \\
-				Read/Write: & 1. & R1 and Hreg should be given values\\
-				            & 2. & ALUout should now contain R1 added to Hreg which has been sign extended and shifted left by 1\\
-				            &    & \\
-				    Schwap: & 1. & Hreg should be set to a valid schwap group number\\
-				            & 2. & SchLatch should now be the value in Hreg\\
-				            &    & \\
-				      Sudo: & 1. & Will vary based on code number\\
-				            &    & \\
-				    J-Type: & 1. & R0 and IR[7:0] should be set to values\\
-				            & 2. & PC should now be changed to R0 + IR[7:0] which has been sign extended and shifted to the left by 1 \\
-			\end{tabular}
-		\subsubsection{Output}
-			\begin{tabular}{ r  r  p{13cm} }
-				A-Type: & 1. & R0 should get a value, IR[11:8] should be set to a register ID\\
-				        & 2. & The value in ALUout should now be in the register which IR[11:8] was pointing to\\
-				        &    & \\
-				  Read: & 1. & ALUout should be set to a valid memory address\\
-				        & 2. & MemRead should now be set to the value in memory at the address from ALUout\\
-				        &    & \\
-				 Write: & 1. & MemRead should get a value, IR[11:8] should be set to a register ID\\\
-				        & 2. & The value which was in MemRead should now be in the register which IR[11:8] was pointing to\\
-			\end{tabular}
-		\subsubsection{Output 2}
-			\begin{tabular}{ r  r  p{13cm} }
-				Read: & 1. & ALUout should be set to a valid memory address\\
-				      & 2. & MemRead should now be set to the value in memory at the address from ALUout\\
-			\end{tabular}
-	\subsection{Plan Tests}
+	\subsection{System Tests}
 		\subsubsection{A-Type}
 			\begin{tabular}{ r  r  p{12cm} }
 				No Immediate:   & 1. & Get this instruction\\
 				                & 2. & Increase PC by 2 for the next instruction\\
 				                & 3. & R0 and R1 should be loaded with the values from the first and second register in the instruction\\
 				                & 4. & The ALUout should have the value of the two values combined using the function code that was passed in\\
-				                & 5. & That value should be in the first specified register for the instruction\\ 
+				                & 5. & That value should be in the first specified register for the instruction\\
 				                &    & \\
 				With Immediate: & 1. & Get this and the next instruction\\
 				                & 2. & Increase PC by 2 for the next instruction\\
@@ -598,7 +560,7 @@ Exit:
 	j	$ra		#return
 			\end{lstlisting}
 	\subsection{Machine Code}
-		Machine code for all of the examples will be included once the assembler is complete. 
+		Machine code for all of the examples will be included once everything has been finalized with the CPU.
 		\begin{center}
 			\begin{tabular}{| c | c || c | c |} \hline
 				\multicolumn{2}{| p{1.5cm} ||}{RelPrime} & \multicolumn{2}{ p{1.5cm} |}{GCD} \\ \hline
@@ -662,7 +624,7 @@ Exit:
 						             & 2     & EPC \\
 						             & 3     & Exception Temporary \\ \hline
 						15           & 0 - 3 & Illuminati \\ \hline
-					\end{tabular} \end{center} 
+					\end{tabular} \end{center}
 			\end{enumerate}
 	\subsection{Instructions}
 		\subsubsection{Types and Layouts}

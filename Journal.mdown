@@ -73,3 +73,20 @@ In this milestone we accomplished the following:
 *	attached everything together and we are currently working on debugging.
 
 We had our regular Sunday meeting and finished most of the separate implementation and then spend Monday to Wednesday attaching everything together. Alex finished writing the Assembler and the Memory/PC/Regfile part of the CPU, Charlie finished the control unit, Andrew updated and worked on the assembler as well as finished the ALU, and Wesley worked on the documentation and compiler, which is almost able to compile relPrime and gcd.
+
+Milestone Six
+-------------
+
+In this milestone we accomplished the following:
+
+*	Updated the design docs based on recommendations
+*	Updated the control unit for the changes that we made to the datapath
+*	Updated the Datapath
+*	Tested and debugged CPU
+*	Created a kernel
+*	Put the complier in a state where it can compile relPrime (hopefully correctly)
+*	Started IO
+
+We had our regular 12 hour meeting on Sunday to start with debugging the CPU and then also had a meeting Tuesday to try and finish up debugging.  Alex and Charlie primarily worked on debugging the CPU.  Andrew worked on ALU debugging and worked on IO as well as writing LINUCKS.  Wesley worked on the compiler as well as doing some documentation updates and journal.
+
+![alt text](jStuff.png)
