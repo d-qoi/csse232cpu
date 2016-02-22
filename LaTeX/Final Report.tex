@@ -1,0 +1,133 @@
+\documentclass{report}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{makecell}
+\usepackage{listings}
+\usepackage{pdflscape}
+\usepackage{longtable}
+\usepackage{indentfirst}
+\usepackage{multicol}
+\usepackage{graphicx}
+\graphicspath{ {images/} }
+\setlength{\columnsep}{1cm}
+
+\title{Schwap CPU}
+\author{Team M: \\ Charlie Fenoglio, Alexander Hirschfeld, \\ Andrew McKee, and Wesley Van Pelt}
+\date{Winter 2015/2016}
+
+\begin{document}
+\maketitle
+\setcounter{tocdepth}{4}
+\tableofcontents
+
+\chapter{Report}
+	\section{Executive summary}
+	\section{Introduction}
+	\section{Body}
+		\subsection{Instruction Set Design}
+			Our assembly design was built around the idea that an accumulator can best use a 16 bit instruction.  In MIPS, there are 15 bits set aside for all of the declaration that MIPS needs for directing data to the correct register. When looking through what we needed and wanted to accomplish we chose a design that would reuse the first source register as the destination register. This design choice was also seen in the IA-32. Because we are using 8 of the 16 bits of the instruction, we are able to have 4 bits for our function code, and another 4 bits for anything else.\par
+			The 4 bits at the end of the instruction are used to declare the operation for the ALU and as an unsigned offset for branching and read/write., The ALU ups code being the last 4 bits of the instruction allows us to have all of the common ALU operations and a few extra with the option of adding more if we should ever need. We also decided that the best way to handle immediate loading would be to have a dual port RAM. This enables us to load immediates immediately without using multiple instructions or additional instructions. All of the immediate loading is done through the ALU operations because we determined that the majority of immediates used will be while doing mathematical operations.\par
+			The unsigned offsets for branching and read/writes forces the programmer to think before they write code create more optimized code, and creating code that is easier to read. Knowing that branches can only move down creates an environment that is much easier to debug after the code has been assembled to hex. One of the downsides to this is that the assembler must be more complex to account for branching up and down, as well as branching over more than 16 instructions. There is luckily a clever way to handle this by inverting the checked conditions and branching over a jump to the new destination. The other limiting thing with the 4 bit unsigned offset comes from read and write. The programmer is only able to read or write 16 places above the current memory address, this limitation is something that will have to be worked around by the programmers because unlike branching, the Assembler does not handle converting a number above 15 as a pseudo instruction.\par
+			Another limited thing is jumping. Jumps have an 8 bit signed offset from the starting address passed to them. This gives jumps a range of -128 lines to 127 lines above or below the address in the register. Normal jumps are done based on PC, however any register will work. This decision was made because we wanted to encourage the use of PC relative jumps in methods to allow them to be more portable after they have been assembled. The assembler can handle jumping outside of the range, there is no good practice for doing this by hand outside of knowing the exact location in memory for which the programmer wants to jump, loading that into a temporary value, and using that as the register outside of offset.\par
+			To get around the limitation of 16 registers, we decided to implement a set of registers called “Schwap.” These 16 sets of 4 registers are accessed in sets of 4. These registers behave exactly the same as the other registers when they are selected, however they can be ‘stored’ or deselected with a command and another set of 4 brought into the positions of the previous. The stored values, outside of special values for IO, cannot change. These swappable registers are our solution to passing arguments, IO, and extending the users working variables so they do not have to use memory as often.
+		\subsection{Implementation}
+		\subsection{Xilinx Model}
+			Everything that was done in Xilinx was done with Verilog code rather than schematics. This was done to more easily merge files and track what changes were made between versions. This turned out to be a benefit because verilog code is easy to understand and modify and has a find a replace functionality.One of the downsides to using verilog is that we don’t have control over what decisions the HDL compiler makes. We cannot chose to optimize things by using a less efficient pattern on silicon that has a faster throughput.\par
+			We broke things down into what we determined to be the most efficient patterns: Memory and PC, the ALU, Schwap, and Control. These were then combined into larger groups, Register file, containing Schwap and other logic, and then the Register file and ALU. Each of these components were tested independently before we attached everything together. One of the things that we found is that separate testing does not let us account for timing errors that happened when we had things chained together.
+		\subsection{Testing Methodology}
+			With each component, we tested to make sure that it functioned as intended. These tests did not cover every single combination, but they did cover all edge cases and common cases that we thought would appear most frequently. These test were mostly used to make sure that the part functioned correctly and would continue to function correctly as we attached the components together and modified timings and add to the components.and modified the RTL to suite the ever changing needs that we found or created.\par
+			As we created new elements to add to the data path, we started by defining what we thought the results should be then built a component that complied with what we defined before starting. This let us start writing tests before component was finished or started.
+		\subsection{Final Results}
+			Using the XST Synthesis we tested the maximum possible performance. According to these calculations, our CPU has an approximate maximum frequency of 30 MHz, executing a cycle in about 300ns. On average for the RelPrime program, each instruction takes about 2.5 cycles. With a total of 45,115 instructions, the program runs in 61$\mu$s total time. The total storage space used for RelPrime and Euclid’s Algorithm is 76 bytes.
+
+	\section{Conclusion}
+
+\chapter{Design Documentation}
+	\input{DesignDoc}
+
+\chapter{Design Journal}
+	\section{Milestone 1}
+		In this milestone we accomplished the following:
+		\begin{itemize}
+			\item Decided on CPU Architecture, Load-Store
+			\item Decided on CPU Instruction set basics
+			\begin{itemize}
+				\item ALU instructions use the first source as the Destination
+				\item There is a set of registers that is swappable, henceforth know as Schwappable Registers.
+			\end{itemize}
+			\item Wrote Assembly instructions for RelPrime
+		\end{itemize}
+		Alex and Wesley worked on the design of the CPU and Instruction set. Wesley created the documentation and Charlie scribed and provided arguments and counter arguments for ideas.  Andrew didn't show up or reply to emails.
+	\section{Milestone 2}
+		In this milestone we accomplished the following:
+		\begin{itemize}
+			\item Implemented recommendations from previous milestone
+			\item Started design of components
+			\begin{itemize}
+				\item Created rough outline of the ALU on a whiteboard
+				\begin{itemize}
+					\item Created 4-bit carry look ahead adder in verilog
+				\end{itemize}
+				\item Figured out how our "SchwapBox" will be implemented
+			\end{itemize}
+			\item Created RTL
+		\end{itemize}
+		Our primary meeting was on Sunday the 17th.  We also had more, smaller meetings throughout the week.  During meetings we all contributed to what we were discussing, which were primarily the RTL summary table, SchwapBox, and ALU.  Outside of the meetings Alex primarily worked on the assembler and almost finished it.  Andrew was also experimenting with an assembler, then implemented the 4-bit carry look ahead adder in verilog and wrote test cases for it.  Wesley did all of the documentation and journal.
+	\section{Milestone 3}
+		In this milestone we accomplished the following:
+		\begin{itemize}
+			\item Updated documentation based on recommendations from the previous milestone
+			\item Designed data path
+			\begin{itemize}
+				\item Created data path without control on white board
+				\item Added inputs from control elements
+				\item Copied whiteboard into FireAlpaca to make it a convenient .PNG
+			\end{itemize}
+			\item Assembler is working and mostly bug free
+			\item Compiler is in progress
+			\item Emulator is in progress
+		\end{itemize}
+		We met Wednesday to work on homework and finish the assembler. A larger meeting took place Sunday to design the data path and finish up other work. Wesley finished about half of a compiler, did the documentation and tests, as well as provided markers and beautiful whiteboard drawing skills. Alex polished off the assembler. Charlie turned the data path into a useful picture, and did the journal. Andrew began progress on the emulator and is about halfway done. Alex, Charlie and Wesley designed the data path on the white board collaboratively.
+	\section{Milestone 4}
+		In this milestone we accomplished the following:
+		\begin{itemize}
+			\item Updated documentation based on recommendations from the previous milestone
+			\item Created what the control unit should be outputting for what cycle
+			\begin{itemize}
+				\item Also have a draft of the control unit in verilog
+			\end{itemize}
+			\item Integration tests started in verilog
+			\item Assembler was rewritten
+			\item Compiler is in progress
+			\item Emulator is working
+		\end{itemize}
+		We had our normal 12ish hour meeting on Sunday to work on the control unit for milestone 4.  Wesley made more progress on compiler, did the documentation, and journal.  Alex rewrote the assembler and started writing integration tests in verilog.  Charlie put the control unit into verilog. Andrew now has a working emulator called jSchpim, it has a similar (but better) interface to qtSpim.
+	\section{Milestone 5}
+		In this milestone we accomplished the following:
+		\begin{itemize}
+			\item Updated the design docs based on recommendations
+			\item Updated the control unit for the changes that we made to the datapath
+			\item Updated the Datapath for slight optimizations and to remove extraneous registers
+			\item Implemented the separate components and created tests for each set
+			\item Finished the assembler worked on the emulator and compiler
+			\item Fixed the Verilog code so that the RTL can be synthesized
+			\item attached everything together and we are currently working on debugging.
+		\end{itemize}
+		We had our regular Sunday meeting and finished most of the separate implementation and then spend Monday to Wednesday attaching everything together. Alex finished writing the Assembler and the Memory/PC/Regfile part of the CPU, Charlie finished the control unit, Andrew updated and worked on the assembler as well as finished the ALU, and Wesley worked on the documentation and compiler, which is almost able to compile relPrime and gcd.
+	\section{Milestone 6}
+		In this milestone we accomplished the following:
+		\begin{itemize}
+			\item Updated the design docs based on recommendations
+			\item Updated the control unit for the changes that we made to the datapath
+			\item Updated the Datapath
+			\item Tested and debugged CPU
+			\item Created a kernel
+			\item Put the complier in a state where it can compile relPrime (hopefully correctly)
+			\item Started IO
+		\end{itemize}
+		We had our regular 12 hour meeting on Sunday to start with debugging the CPU and then also had a meeting Tuesday to try and finish up debugging.  Alex and Charlie primarily worked on debugging the CPU.  Andrew worked on ALU debugging and worked on IO as well as writing LINUCKS.  Wesley worked on the compiler as well as doing some documentation updates and journal.
+\chapter{Test Results}
+
+\end{document}
