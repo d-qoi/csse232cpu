@@ -14,7 +14,7 @@
 				\$t0 - \$t3 & 8 - 11  & User Temporaries       & No  \\ \hline
 				\$h0 - \$h3 & 12 - 15 & Schwap                 & -   \\ \hline
 			\end{tabular} \\
-			$^\dagger$See Section 11.1.1-1 for details
+			$^\dagger$See Section 2.11.1.1-1 for details
 		\end{center}
 	\subsection{Schwap Registers}
 		The "schwap" registers are registers that appear to be swapped using a command.  There is no data movement when schwapping, it only changes which registers the \$h0 - \$h3 refer to.  There are 8 groups the user can use for general purpose and 8 reserved groups.
@@ -42,7 +42,7 @@
 \section{Instructions}
 	All instructions are 16-bits.  The destination register is also used as a source unless otherwise noted.
 	\subsection{Instruction Types and Bit Layouts}
-		Instructions can be manually translated by putting the bits for each of the components of the instructions in the places listed by the diagrams for each type.  The OP codes can be found in section 2.2.* and function codes can be found in Section 2.2.1.  The destination and source are register numbers, which can be found under the "Register Names and Descriptions" (1.1) table.  Schwap group numbers can be found under the "Schwap Group Numbers, Descriptions, and Uses" (1.2.1) table.  The active schwap group and sudo code number is not preserved over a function call.
+		Instructions can be manually translated by putting the bits for each of the components of the instructions in the places listed by the diagrams for each type.  The OP and function codes can be found in section 2.2.2.  The destination and source are register numbers, which can be found under the "Register Names and Descriptions" (1.1) table.  Schwap group numbers can be found under the "Schwap Group Numbers, Descriptions, and Uses" (2.1.2) table.  The active schwap group and sudo code number is not preserved over a function call.
 		\subsubsection{A-Type}
 			\begin{center}
 				\begin{tabular}{l r l r l r l r}
@@ -85,7 +85,7 @@
 				\end{tabular}
 			\end{center}
 	\subsection{Core Instructions}
-		Some instructions have alias names, see Section 11.3.2 for a list. [dest], [src], [src0], [src1] all refer to a register in the register file, for example \$t0.  "NAM" stands for the name of the instruction (for example, "and").  "OP" stands for whatever the op would be (for example, "\&").
+		Some instructions have alias names, see Section 2.11.3 for a list. [dest], [src], [src0], [src1] all refer to a register in the register file, for example \$t0.  "NAM" stands for the name of the instruction (for example, "and").  "OP" stands for whatever the op would be (for example, "\&").
 		\subsubsection{A-Type}
 			\begin{center} \begin{tabular}{| c | c | c |} \hline
 				\thead{Function \\ Code} & Name & Description \\ \hline
@@ -148,7 +148,7 @@
 				 0x6 & jr & jr [dest] [offset] & \thead{pc $=$ dest + offset} & \thead{Jumps to the instruction at the address in [dest] + [offset]}\\ \hline
 			\end{tabular} \end{center}
 	\subsection{Pseudo Instructions}
-		There are two types of pseudo instructions.  One are instructions which are always pseudo instructions, the other are sometimes pseudo depending on the conditions.  Some instructions have alias names, see Section 11.3.2 for a list.
+		There are two types of pseudo instructions.  One are instructions which are always pseudo instructions, the other are sometimes pseudo depending on the conditions.  Some instructions have alias names, see Section 2.11.3 for a list.
 		\subsubsection{Always Pseudo Instructions}
 			\begin{center} \begin{tabular}{| c | c | c | c |} \hline
 				Name & Syntax    & Actual Code & Description \\ \hline
@@ -171,7 +171,7 @@
 			\multicolumn{2}{|c|}{Sudo modes} \\ \hline
 			Syntax  & Description \\ \hline
 			sudo 0  & \thead{Signifies the end of a program}\\ \hline
-			sudo 10 & \thead{Blocking print all kernel registers}\\ \hline
+			sudo 10 & \thead{Print all kernel registers}\\ \hline
 			sudo 11 & \thead{Multiply \$h0 and \$h1 in the kernel schwap}\\ \hline
 			sudo 13 & \thead{Push schwap (group number in kernel schwap \$h0) to stack}\\ \hline
 			sudo 14 & \thead{Pop schwap (group number in kernel schwap \$h0) from stack}\\ \hline
@@ -380,11 +380,11 @@
 			\begin{tabular}{ r  r  p{12cm} }
 				Implementation: & \multicolumn{2}{p{12.75cm}}{Use 4 16-bit wide schmuxes which switch to 16 16-bit registers each, and then 4 16-bit deschmuxes to each group of the 16 registers}\\
 				                &    & \\
-				         Tests: & 1. & Set Schlatch to 0 $\Rightarrow$ The schlatch should be set to 0 and should allow reading and writting to schwap group 0\\
+				         Tests: & 1. & Set Schlatch to 0 $\Rightarrow$ The schlatch should be set to 0 and should allow reading and writing to schwap group 0\\
 				                & 2. & Write values $\Rightarrow$ The values should be written to the group number according to the schlatch\\
-					            & 3. & Change schlatch $\Rightarrow$ The values in the preivious and new schwap group should not have been altered\\
+					            & 3. & Change schlatch $\Rightarrow$ The values in the previous and new schwap group should not have been altered\\
 					            & 4. & Write data to a new schwap group $\Rightarrow$ The data should be written to the new schwap group and the data in the old group should not have been altered\\
-					            & 5. & Change back to a preiviously used schlatch $\Rightarrow$ The data preiviously written data should still be in the schwap group\\
+					            & 5. & Change back to a previously used schlatch $\Rightarrow$ The data previously written data should still be in the schwap group\\
 			\end{tabular}
 		\subsubsection{Register File}
 			\begin{tabular}{ r  r  p{12cm} }
@@ -422,13 +422,13 @@
 		\subsubsection{A-Type}
 			\begin{tabular}{ r  r  p{12cm} }
 				No Immediate:   & 1. & Get this instruction\\
-				                & 2. & Increase PC by 2 for the next instruction\\
+				                & 2. & Increase PC by 1 for the next instruction\\
 				                & 3. & R0 and R1 should be loaded with the values from the first and second register in the instruction\\
 				                & 4. & The ALUout should have the value of the two values combined using the function code that was passed in\\
 				                & 5. & That value should be in the first specified register for the instruction\\
 				                &    & \\
 				With Immediate: & 1. & Get this and the next instruction\\
-				                & 2. & Increase PC by 2 for the next instruction\\
+				                & 2. & Increase PC by 1 for the next instruction\\
 				                & 3. & R0 should be loaded with the value from the first register in the instruction and R1 should have the immediate which was in NextInst, PC should have been increased by 2 again\\
 				                & 4. & The ALUout should have the value of the two values combined using the function code that was passed in\\
 				                & 5. & That value should be in the first specified register for the instruction, the immediate should also have been stored in the second register from the instruction if it was given\\
@@ -436,21 +436,21 @@
 		\subsubsection{B-Type}
 			\begin{longtable}{ r  r  p{13cm} }
 				Branches: & 1. & Get this instruction\\
-				          & 2. & Increase PC by 2 for the next instruction\\
+				          & 2. & Increase PC by 1 for the next instruction\\
 				          & 3. & R0 and R1 should be loaded with the values from the first and second register in the instruction\\
 				          & 4. & The ALUout should have the new PC value for use if the branch is supposed to branch\\
 				          & 5. & ALUout should be transferred to PCtemp, the combination of R0 and R1 should be in ALUout\\
 				          & 6. & If ALUout is 0 PC should have been changed to what is in PCtemp\\
 				          &    & \\
 				Read:     & 1. & Get this instruction\\
-				          & 2. & Increase PC by 2 for the next instruction\\
+				          & 2. & Increase PC by 1 for the next instruction\\
 				          & 3. & R0 and R1 should be loaded with the values from the first and second register in the instruction, Hreg should have the offset from the instruction\\
 				          & 4. & The ALUout should have the value of what's in R1 added to the sign extended value in Hreg\\
 				          & 5. & ALUout should be passed into main memory and the value at that address should be in MemRead\\
 				          & 6. & The first register specified in the instruction should have the value from memory\\
 				          &    & \\
 				Write:    & 1. & Get this instruction\\
-				          & 2. & Increase PC by 2 for the next instruction\\
+				          & 2. & Increase PC by 1 for the next instruction\\
 				          & 3. & R0 and R1 should be loaded with the values from the first and second register in the instruction, Hreg should have the offset from the instruction\\
 				          & 4. & The ALUout should have the value of what's in R1 added to the sign extended value in Hreg\\
 				          & 5. & ALUout should be passed into memory as well as the value in R0, the value in R0 should be in memory at that address
@@ -458,12 +458,12 @@
 		\subsubsection{H-Type}
 			\begin{tabular}{ r  r  p{12cm} }
 				Schwap: & 1. & Get this instruction\\
-				        & 2. & Increase PC by 2 for the next instruction\\
+				        & 2. & Increase PC by 1 for the next instruction\\
 				        & 3. & Hreg should get the schwap group number\\
 				        & 4. & SchLatch should now be set to the new schwap group number\\
 				        &    & \\
 				Sudo:   & 1. & Get this instruction\\
-				        & 2. & Increase PC by 2 for the next instruction\\
+				        & 2. & Increase PC by 1 for the next instruction\\
 				        & 3. & Hreg should get the sudo code number\\
 				        & 4. & The correct action should now be performed based on the code number\\
 				        &    & \\
@@ -474,7 +474,7 @@
 		\subsubsection{J-Type}
 			\begin{tabular}{ r  r  p{12cm} }
 				jr: & 1. & Get this instruction\\
-				    & 2. & Increase PC by 2 for the next instruction\\
+				    & 2. & Increase PC by 1 for the next instruction\\
 				    & 3. & PC should be changed to the value in R0 added to the sign extended value in IR[7:0]\\
 			\end{tabular}
 \section{Coding Practices}
@@ -535,9 +535,27 @@
 	\subsection{Adding Pseudo Instructions}
 		If you REALLY want to add pseudo instructions, there is documentation within the Python file.  Remember to both add the instruction to the PseudoList at the top of the file, and to add the case in pseudoExpandHelper.  Follow the patterns given.  Any modification to the assembler code voids all warranty.
 \section{Emulator}
-	Andrew, I need documentation on this
-\section{Kernel}
-	Andrew, I need documentation on this
+	The emulator can be run from the executable jar, JScpim.jar. Load the kernel and the program into memory. The kernel should be loaded at 0x0000, and the program to be run should be loaded at 0x1000.  The file structure it takes is as follows. The file may optionally start with a hash sign and a 4-digit hex number. If not, \#1000 is assumed. This is the location the memory will be loaded into.  Memory is taken in the form "0xHHHH", where H is a hex digit. Each 16-bits of memory should be on its own line. Invalid lines will be ignored.\par
+	The emulator is slightly buggy, however basic things should work. Note that behavior for minimizing then unminimizing the window is... undefined. Behavior should be normal for using ALT+Tab to switch to/from the window, however, based on the way java handles events.\\
+	\begin{center}\includegraphics[width=16cm]{jSchpim}\end{center}
+	\begin{tabular}{ r l }
+		1. & Register contents \\
+		2. & Schwap contents \\
+		3. & Console output \\
+		4. & Current instructions \\
+		5. & Stack contents \\
+		6. & Debug viewer \\
+		7. & Current instruction highlighted in yellow \\
+		8. & Instruction pointed to by \$ra highlighted in cyan \\
+	\end{tabular}
+	\subsection{Known Bugs}
+		\begin{itemize}
+			\item If you try to become a professional Korean starcraft player on the reset button, the window will break
+			\item The illuminati seem to have infiltrated parts of the code base. Don't listen to their lies
+			\item It's java and swing... There's going to probably be a lot of bugs but if you're not stupid and/or trying to break it you shouldn't really run into that many
+		\end{itemize}
+\section{LINUKS}
+The Kernel (LINUKS) handles the initialization of the CPU, sudo calls, and exception handling. The kernel is always loaded starting at 0x0000. Instructions 0x0001 to 0x000F should jump to the sudo handlers for the same number as the address (e.g. 0x0001 should be a 16-bit jump to the sudo 1 handler).  The initialization of the CPU includes waiting for 1,000,000 cycles @ 50MHz, setting the \$sp=0xFFFF, and jumping to 0x1000 where the program is loaded.  The 1,000,000 cycles are representative of the amount of 50Hz cycles it would take LCD to initialize if it were implemented in the future.  Sudo calls are outlined in section 2.2.2. While all the ones mentioned are currently implemented, the rest remain reserved for unspecified future use, and will do nothing if called.  Exceptions are handled by jumping to 0x0000. Rather than performing sudo 0, which is dealt with in hardware, it will jump to the exception handler. Currently interrupts and exceptions will not occur naturally. However, we decided to include it so that programmer-defined exception handling was possible.
 \section{Program Loader}
 	\subsection{Using the Program Loader}
 		Calling the loader:  programLoader program.bin <memory.coe> <kernel.bin>\\
@@ -579,7 +597,7 @@
 				$<=$   & Checks if the value on the left side is less than or equal to the value on the right side\\ \hline
 			\end{tabular} \end{center}
 		\subsubsection{Declaring and assigning variables}
-			Variable names should always start with letters and never contain spaces.  Declaring a varibale can use any of the following syntaxes:\\
+			Variable names should always start with letters and never contain spaces.  Declaring a variable can use any of the following syntaxes:\\
 			\begin{center} \begin{tabular}{| l | p{10cm} |} \hline
 				Syntax     & Description \\ \hline
 				int a;     & Reserves a place in memory/registers for the variable "a"\\ \hline
@@ -592,7 +610,7 @@
 				a = 5;        & Sets the variable "a" to $5$\\ \hline
 				a = b + 5;    & Sets the variable "a" to "b" $+$ $5$, the $+$ can be any valid combining operator\\ \hline
 				a = b + c;    & Sets the variable "a" to "b" $+$ "c", the $+$ can be any valid combining operator\\ \hline
-				a += 5;       & Adds $5$ to the varible "a", the $+$ can be any valid combining operator\\ \hline
+				a += 5;       & Adds $5$ to the variable "a", the $+$ can be any valid combining operator\\ \hline
 				a = method(); & Sets the variable "a" to the return value of "method"\\ \hline
 			\end{tabular} \end{center}
 		\subsubsection{Conditionals}
