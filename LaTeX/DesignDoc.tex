@@ -42,7 +42,7 @@
 \section{Instructions}
 	All instructions are 16-bits.  The destination register is also used as a source unless otherwise noted.
 	\subsection{Instruction Types and Bit Layouts}
-		Instructions can be manually translated by putting the bits for each of the components of the instructions in the places listed by the diagrams for each type.  The OP and function codes can be found in section 2.2.2.  The destination and source are register numbers, which can be found under the "Register Names and Descriptions" (1.1) table.  Schwap group numbers can be found under the "Schwap Group Numbers, Descriptions, and Uses" (2.1.2) table.  The active schwap group and sudo code number is not preserved over a function call.
+		Instructions can be manually translated by putting the bits for each of the components of the instructions in the places listed by the diagrams for each type.  The OP and function codes can be found in section 2.2.2.  The destination and source are register numbers, which can be found under the "Register Names and Descriptions" table.  Schwap group numbers can be found under the "Schwap Group Numbers, Descriptions, and Uses" table.  The active schwap group and sudo code number is not preserved over a function call.
 		\subsubsection{A-Type}
 			\begin{center}
 				\begin{tabular}{l r l r l r l r}
@@ -85,7 +85,7 @@
 				\end{tabular}
 			\end{center}
 	\subsection{Core Instructions}
-		Some instructions have alias names, see Section 2.11.3 for a list. [dest], [src], [src0], [src1] all refer to a register in the register file, for example \$t0.  "NAM" stands for the name of the instruction (for example, "and").  "OP" stands for whatever the op would be (for example, "\&").
+		Some instructions have alias names, see the notes section for a list. [dest], [src], [src0], [src1] all refer to a register in the register file, for example \$t0.  "NAM" stands for the name of the instruction (for example, "and").  "OP" stands for whatever the op would be (for example, "\&").
 		\subsubsection{A-Type}
 			\begin{center} \begin{tabular}{| c | c | c |} \hline
 				\thead{Function \\ Code} & Name & Description \\ \hline
