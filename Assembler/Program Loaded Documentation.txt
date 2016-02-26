@@ -1,0 +1,30 @@
+Program Loader Documentation:
+	Use:
+		programLoader program.bin <memory.coe> <kernel.bin>
+
+		Data can be preloaded into the memory file by adding:
+
+					loc = data
+
+		to the end of the assembly
+
+		loc being the exact location (in decimal) above the program
+		and below 15480 (15480 to 20480 is user stack, can use but be careful)
+		and above 10000 or the end of your program, your decision
+
+		data is a 4 digit hex number, must be at most 4 digits, in hex.
+
+		please augment with zeroes, not doing so is untested because 
+		coe files are weird.
+
+		example : 10101 = abcd
+
+		there is not a lot of checking in this code, if it fails, that is on you ;)
+
+		kernel code     [0:4096)
+		user code       [4096:10000) <can be more, your call>
+		user space      [10000:15480)
+		stack           [15480:20480] <will underflow if you let it, grows down>
+
+		Example Use:
+			programLoader.py relPrimeWithIO.bin
