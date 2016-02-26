@@ -1,0 +1,5 @@
+xst -intstyle ise -ifn "C:/XilinxProjectsLocal/CarryLookahead/FullAdd1b.xst" -ofn "C:/XilinxProjectsLocal/CarryLookahead/FullAdd1b.syr" 
+ngdbuild -intstyle ise -dd _ngo -nt timestamp -i -p xc3s500e-fg320-4 FullAdd1b.ngc FullAdd1b.ngd  
+map -intstyle ise -p xc3s500e-fg320-4 -cm area -ir off -pr off -c 100 -o FullAdd1b_map.ncd FullAdd1b.ngd FullAdd1b.pcf 
+par -w -intstyle ise -ol high -t 1 FullAdd1b_map.ncd FullAdd1b.ncd FullAdd1b.pcf 
+trce -intstyle ise -v 3 -s 4 -n 3 -fastpaths -xml FullAdd1b.twx FullAdd1b.ncd -o FullAdd1b.twr FullAdd1b.pcf 

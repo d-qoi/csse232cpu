@@ -1,0 +1,5 @@
+verilog isim_temp "CLACell.v"
+verilog isim_temp "CarryLook4b.v"
+verilog isim_temp "CarryLook16b.v"
+verilog isim_temp "TestCarry16b.v"
+verilog isim_temp "C:/Xilinx/14.7/ISE_DS/ISE//verilog/src/glbl.v"

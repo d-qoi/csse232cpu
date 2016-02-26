@@ -1,0 +1,28 @@
+Command line:
+   TestCarry16b_isim_beh.exe
+     -simmode  gui
+     -simrunnum  0
+     -socket  62832
+
+Sun Jan 24 20:38:44 2016
+
+
+ Elaboration Time: 0.109375 sec
+
+ Current Memory Usage: 1322.68 Meg
+
+ Total Signals          : 151
+ Total Nets             : 126
+ Total Signal Drivers   : 88
+ Total Blocks           : 23
+ Total Primitive Blocks : 17
+ Total Processes        : 90
+ Total Traceable Variables  : 21
+ Total Scalar Nets and Variables : 239
+
+ Total Simulation Time: 0.125 sec
+
+ Current Memory Usage: 693.535 Meg
+
+Sun Jan 24 20:45:14 2016
+
