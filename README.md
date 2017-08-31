@@ -3,4 +3,4 @@
 
 Created for Rose-Hulman CSSE 232, developed in Xilinx with some version of verilog.
 
-Check the documentation for documentation.
+Check LaTeX for documentation.
